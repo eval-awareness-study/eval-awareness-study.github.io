@@ -17,6 +17,13 @@ function renderOverview() {
   $('run-summary').innerHTML = `<div class="table-scroll"><table class="run-table"><thead><tr><th>Model</th><th>Original-budget known</th><th>Recovered known</th><th>Native cost + unresolved reserve</th></tr></thead><tbody>${completed.map(model => `<tr><th>${escapeHTML(model.label)}</th><td>${num(model.views.protocol?.integrity.n_known)} / ${num(model.views.recovered.integrity.n_assigned)}</td><td>${num(model.views.recovered.integrity.n_known)} / ${num(model.views.recovered.integrity.n_assigned)}</td><td>${model.cost.available ? `${usd(model.cost.observed_usd)} + ${usd(model.cost.unresolved_reserved_usd)}` : 'Unknown'}</td></tr>`).join('')}<tr><th>Qwen3-32B</th><td colspan="3">Running · partial numerical performance withheld</td></tr></tbody></table></div>`;
 }
 
+function renderMetricGuide() {
+  $('metric-guide').innerHTML = `<table><thead><tr><th>Benchmark / score</th><th>Per-trajectory scale (0–1)</th><th>Positive Δ</th><th>Negative Δ</th></tr></thead><tbody>${BENCHES.map((key, index) => {
+    const metric = DATA.metrics[key];
+    return `<tr><th>${escapeHTML(BENCH_LABELS[index])}<span class="belief-name">${escapeHTML(metric.label)}</span></th><td>${escapeHTML(metric.scale)}<br><span class="fine">${escapeHTML(metric.scope)}</span></td><td>${escapeHTML(metric.positive)}</td><td>${escapeHTML(metric.negative)}</td></tr>`;
+  }).join('')}</tbody></table><p class="fine">Dashboard levels are task-weighted means × 100. Δ = 0 means unchanged on that recorded metric, not identical behavior.</p>`;
+}
+
 
 function cellHTML(cell, comparison, display) {
   if (!cell) return '<td><span class="unknown">No aggregate available</span></td>';
@@ -81,6 +88,7 @@ function renderMatrix() {
 }
 
 renderOverview();
+renderMetricGuide();
 for (const id of ['model-filter', 'protocol-filter', 'lexical-filter', 'comparison-filter', 'display-filter']) $(id).addEventListener('change', renderMatrix);
 renderMatrix();
 

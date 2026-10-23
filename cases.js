@@ -26,7 +26,8 @@ function initCaseBrowser() {
   const signed = value => `${value > 0 ? '+' : ''}${native(value)}`;
   const benchName = key => BENCH_LABELS[BENCHES.indexOf(key)] || key;
   const modelName = key => DATA.models[key]?.label || key;
-  const caseLabel = item => `${modelName(item.model)} · ${benchName(item.benchmark)} · ${item.belief_id} ${item.method} ${item.phrasing}/${item.variant} · item ${item.item_id}, sample ${item.sample_idx} · ${item.reference_label} · ${item.outcome} (${signed(item.delta)})`;
+  const changeLabel = outcome => ({increased:'Score increased', decreased:'Score decreased', unchanged:'Score unchanged'}[outcome] || 'Unknown');
+  const caseLabel = item => `${modelName(item.model)} · ${benchName(item.benchmark)} · ${item.belief_id} ${item.method} ${item.phrasing}/${item.variant} · item ${item.item_id}, sample ${item.sample_idx} · ${item.reference_label} · ${changeLabel(item.outcome)} (${signed(item.delta)})`;
   function localURL(path, base) {
     const url = new URL(path, base);
     if (!['http:', 'https:'].includes(url.protocol) || url.origin !== location.origin || url.username || url.password) {
@@ -62,10 +63,12 @@ function initCaseBrowser() {
     return `<article class="case-rollout"><h4>${escapeHTML(title)}</h4><p>Native score: <strong>${escapeHTML(native(rollout.score))}</strong></p>${cue?.text ? `<div class="case-cue"><h4>Planted input</h4>${pre(cue.text)}</div>` : ''}<details><summary>Scoring and identifiers</summary><p class="case-identity">Setting ${escapeHTML(rollout.setting_id)} · rollout ${escapeHTML(rollout.rid)}</p>${pre(rollout.score_evidence)}</details><div class="case-messages">${messages.length ? messages.map(messageHTML).join('') : '<p>No visible messages available in this export.</p>'}</div></article>`;
   }
   function detailHTML(detail, item) {
+    const metric = DATA.metrics[item.benchmark];
     return `<h3 id="case-title">${escapeHTML(modelName(item.model))} · ${escapeHTML(benchName(item.benchmark))}</h3>
       <p class="case-identity">${escapeHTML(item.belief_id)} · ${escapeHTML(item.method)} · ${escapeHTML(item.phrasing)} wording, variant ${escapeHTML(item.variant)} · item ${escapeHTML(item.item_id)} · sample ${escapeHTML(item.sample_idx)}</p>
-      <p class="case-score"><strong>${escapeHTML(item.metric)}</strong> · native preferred direction: ${escapeHTML(item.better_direction)}<br>Reference: ${escapeHTML(native(item.reference_score))} · Treatment: ${escapeHTML(native(item.treatment_score))} · Treatment − reference: <strong>${escapeHTML(signed(item.delta))} (${escapeHTML(item.outcome)})</strong></p>
-      <p class="fine">Scores and Δ use the native metric scale, not aggregate percentage points. Both trajectories match the same model, benchmark, item and sample. B0 additionally matches placement, wording and variant.</p>
+      <p class="case-score"><strong>${escapeHTML(metric.label)}</strong><br>Reference: ${escapeHTML(native(item.reference_score))} · Treatment: ${escapeHTML(native(item.treatment_score))} · Δ = treatment − reference: <strong>${escapeHTML(signed(item.delta))} · ${escapeHTML(changeLabel(item.outcome))}</strong></p>
+      <p class="case-metric-definition">${escapeHTML(metric.scale)} <strong>Higher means: ${escapeHTML(metric.higher)}</strong><br>${escapeHTML(metric.scope)}</p>
+      <p class="fine">Scores and Δ use the native 0–1 scale, not aggregate percentage points. Signs are not safety-normalized. Both trajectories match the same model, benchmark, item and sample. B0 additionally matches placement, wording and variant.</p>
       <p class="fine">Recorded turns in order; input context and tool details expand on click. Hidden reasoning unavailable.</p>
       <div class="case-pair">${rolloutHTML(detail.reference, `Reference · ${item.reference_label}`)}${rolloutHTML(detail.treatment, 'Treatment · planted cue')}</div>
       <details><summary>Pair provenance and limitations</summary>${pre(detail.provenance)}<ul>${(detail.limitations || []).map(value => `<li>${escapeHTML(value)}</li>`).join('')}</ul></details>`;
