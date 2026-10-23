@@ -6,7 +6,11 @@ const COMPARISONS = {no_edit: 'No edit', neutral: 'Matched neutral', recommendat
 const $ = id => document.getElementById(id);
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'}[char]));
 const num = value => Number.isFinite(value) ? value.toLocaleString('en-US') : 'unknown';
-const pct = (value, signed = false) => Number.isFinite(value) ? `${signed && value > 0 ? '+' : ''}${(value * 100).toFixed(2)}${signed ? ' pp' : '%'}` : 'Unknown';
+const pct = (value, signed = false) => {
+  if (!Number.isFinite(value)) return 'Unknown';
+  const shown = Math.abs(value) <= 1e-12 ? 0 : value;
+  return `${signed && shown > 0 ? '+' : ''}${(shown * 100).toFixed(2)}${signed ? ' pp' : '%'}`;
+};
 const interval = (values, signed = false) => Array.isArray(values) && values.every(Number.isFinite) ? `[${pct(values[0], signed)}, ${pct(values[1], signed)}]` : 'CI unavailable';
 const usd = value => value !== null && value !== undefined && Number.isFinite(Number(value)) ? '$' + Number(value).toFixed(2) : 'unknown';
 const shortName = belief => belief.name.replaceAll('_', ' ');
@@ -26,7 +30,7 @@ function statisticsCell(view, model, benchmark, belief, method) {
 }
 
 function signedColor(value, scale, background = false) {
-  if (!Number.isFinite(value) || value === 0 || !(scale > 0)) return background ? '#fffefa' : '#66706f';
+  if (!Number.isFinite(value) || Math.abs(value) <= 1e-12 || !(scale > 0)) return background ? '#fffefa' : '#66706f';
   const strength = Math.min(1, Math.abs(value) / scale);
   const base = value < 0 ? [39, 103, 155] : [179, 91, 24];
   const white = [255, 254, 250];
@@ -171,16 +175,18 @@ function beliefLabel(id) {
 }
 
 function effectDescription(cell) {
-  return `${MODEL_LABELS[cell.model]} · ${beliefLabel(cell.belief_id)} · ${cell.method}: ${pct(cell.estimate, true)}; pointwise bootstrap 95% CI ${interval(cell.ci95, true)}; Holm p ${pValue(cell.p_adjusted)}; ${testStatus(cell)}`;
+  return `${MODEL_LABELS[cell.model]} · ${beliefLabel(cell.belief_id)} · ${BENCH_LABELS[BENCHES.indexOf(cell.benchmark)]} · ${cell.method}: ${pct(cell.estimate, true)}; pointwise bootstrap 95% CI ${interval(cell.ci95, true)}; Holm p ${pValue(cell.p_adjusted)}; ${testStatus(cell)}`;
 }
 
 function effectDetailsHTML(cell) {
-  return `<p><strong>${escapeHTML(MODEL_LABELS[cell.model])} · ${escapeHTML(beliefLabel(cell.belief_id))} · ${escapeHTML(cell.method)}</strong><br>Δ ${pct(cell.estimate, true)} ${significanceMark(cell)} · pointwise bootstrap 95% CI ${interval(cell.ci95, true)}<br>Paired n=${num(cell.n_observed_pairs)}/${num(cell.n_assigned_pairs)} · ${num(cell.n_task_clusters)} original-task clusters${testDetails(cell)}</p>`;
+  const metric = DATA.metrics[cell.benchmark];
+  const meaning = !Number.isFinite(cell.estimate) ? 'Unknown effect' : Math.abs(cell.estimate) <= 1e-12 ? 'No measured score change' : cell.estimate > 0 ? metric.positive : metric.negative;
+  return `<p><strong>${escapeHTML(MODEL_LABELS[cell.model])} · ${escapeHTML(beliefLabel(cell.belief_id))} · ${escapeHTML(cell.method)}</strong><br>${escapeHTML(BENCH_LABELS[BENCHES.indexOf(cell.benchmark)])} · ${escapeHTML(metric.label)}<br>Δ ${pct(cell.estimate, true)} ${significanceMark(cell)} · pointwise bootstrap 95% CI ${interval(cell.ci95, true)}<br>${escapeHTML(meaning)}. ${escapeHTML(metric.scope)}<br>Paired n=${num(cell.n_observed_pairs)}/${num(cell.n_assigned_pairs)} · ${num(cell.n_task_clusters)} original-task clusters${testDetails(cell)}</p>`;
 }
 
 function effectsTable(cells, caption) {
   if (!cells.length) return '<p class="fine">No effect statistics available for this selection.</p>';
-  return `<table class="effect-data"><caption>${escapeHTML(caption)}</caption><thead><tr><th scope="col">Belief / method / model</th><th scope="col">Δ · pp</th><th scope="col">Pointwise bootstrap 95% CI · pp</th><th scope="col">Paired n / assigned; clusters</th><th scope="col">Condition-label permutation p</th><th scope="col">Holm p · family 112</th><th scope="col">Status</th></tr></thead><tbody>${cells.map(cell => `<tr><th scope="row">${escapeHTML(beliefLabel(cell.belief_id))}<span class="belief-name">${escapeHTML(cell.method)} · ${escapeHTML(MODEL_LABELS[cell.model])}</span></th><td>${pct(cell.estimate, true)} ${significanceMark(cell)}</td><td>${interval(cell.ci95, true)}</td><td>${num(cell.n_observed_pairs)}/${num(cell.n_assigned_pairs)}; ${num(cell.n_task_clusters)} clusters</td><td>${pValue(cell.p_value)}</td><td>${pValue(cell.p_adjusted)}</td><td>${escapeHTML(testStatus(cell))}</td></tr>`).join('')}</tbody></table>`;
+  return `<table class="effect-data"><caption>${escapeHTML(caption)}</caption><thead><tr><th scope="col">Belief / benchmark / method / model</th><th scope="col">Δ · pp</th><th scope="col">Pointwise bootstrap 95% CI · pp</th><th scope="col">Paired n / assigned; clusters</th><th scope="col">Condition-label permutation p</th><th scope="col">Holm p · family 112</th><th scope="col">Status</th></tr></thead><tbody>${cells.map(cell => `<tr><th scope="row">${escapeHTML(beliefLabel(cell.belief_id))}<span class="belief-name">${escapeHTML(BENCH_LABELS[BENCHES.indexOf(cell.benchmark)])}<br>${escapeHTML(cell.method)} · ${escapeHTML(MODEL_LABELS[cell.model])}</span></th><td>${pct(cell.estimate, true)} ${significanceMark(cell)}</td><td>${interval(cell.ci95, true)}</td><td>${num(cell.n_observed_pairs)}/${num(cell.n_assigned_pairs)}; ${num(cell.n_task_clusters)} clusters</td><td>${pValue(cell.p_value)}</td><td>${pValue(cell.p_adjusted)}</td><td>${escapeHTML(testStatus(cell))}</td></tr>`).join('')}</tbody></table>`;
 }
 
 function bindPointDetails(container, detail, records) {
@@ -214,15 +220,74 @@ function interactivePoint(index, description, detailId, content) {
   return `<g class="chart-point" data-detail="${index}" tabindex="0" role="button" aria-controls="${detailId}" aria-label="${escapeHTML(description)}"><title>${escapeHTML(description)}</title>${content}</g>`;
 }
 
-function renderEffectPlot(view, method) {
-  const benchmark = $('chart-benchmark').value;
-  const benchmarkIndex = BENCHES.indexOf(benchmark);
+const DIRECTION_LABELS = {
+  positive: 'Both ↑', negative: 'Both ↓', opposite: 'Opposite directions',
+  one_zero: 'One zero', both_zero: 'Both zero · no directional evidence', unknown: 'Unknown'
+};
+
+function directionAgreement(point) {
+  if (!point || !Number.isFinite(point.luna) || !Number.isFinite(point.terra)) return 'unknown';
+  const a = Math.abs(point.luna) <= 1e-12 ? 0 : Math.sign(point.luna);
+  const b = Math.abs(point.terra) <= 1e-12 ? 0 : Math.sign(point.terra);
+  if (a === 0 && b === 0) return 'both_zero';
+  if (a === 0 || b === 0) return 'one_zero';
+  return a === b ? (a > 0 ? 'positive' : 'negative') : 'opposite';
+}
+
+function modelDifferenceHTML(point) {
+  const gap = point?.model_difference;
+  return `<p><strong>Between-model effect difference: Terra Δ − Luna Δ</strong><br>${pct(gap?.estimate, true)} · pointwise joint-bootstrap 95% CI ${interval(gap?.ci95, true)}<br>${num(gap?.n_bootstrap_valid)} valid joint draws · ${escapeHTML(gap?.status?.replaceAll('_', ' ') || 'unknown')}<br>Not a difference in raw scores. This interval is not multiplicity-adjusted; containing zero does not establish equal effects.</p>`;
+}
+
+function profileCellHTML(view, benchmark, belief, method) {
+  const point = view.points.find(item => item.benchmark === benchmark && item.belief_id === belief.id && item.method === method);
+  const cells = ['luna', 'terra'].map(model => statisticsCell(view, model, benchmark, belief.id, method)).filter(Boolean);
+  return `<td data-benchmark="${benchmark}">${['luna', 'terra'].map(model => {
+    const cell = cells.find(item => item.model === model);
+    return `<div class="belief-estimate" style="background:${signedColor(cell?.estimate, view.scale_max_abs, true)}"><span>${MODEL_LABELS[model]}</span><strong>${pct(cell?.estimate, true)} ${significanceMark(cell)}</strong></div>`;
+  }).join('')}<span class="profile-direction">${DIRECTION_LABELS[directionAgreement(point)]}</span><details class="cell-details"><summary>Intervals &amp; model difference</summary>${cells.map(effectDetailsHTML).join('')}${modelDifferenceHTML(point)}</details></td>`;
+}
+
+function renderBeliefProfiles(view, method) {
+  const beliefId = $('profile-belief').value;
   const methods = method === 'all' ? ['P1', 'P2'] : [method];
-  const rows = DATA.beliefs.flatMap(belief => methods.map(placement => ({belief, method: placement})));
-  const cells = rows.flatMap(row => ['luna', 'terra'].map(model => statisticsCell(view, model, benchmark, row.belief.id, row.method)).filter(Boolean));
-  const values = cells.flatMap(cell => [cell.estimate, ...(validInterval(cell.ci95) ? cell.ci95 : [])]).filter(Number.isFinite);
+  $('profile-context').textContent = `${$('protocol-filter').selectedOptions[0].textContent} · ${$('lexical-filter').selectedOptions[0].textContent} · reference: ${COMPARISONS[$('comparison-filter').value]}. Both models are shown; no benchmark averaging.`;
+  renderHeatmapKey(view, true, 'profile-heatmap-key');
+  if (!view) {
+    for (const id of ['belief-matrix', 'profile-chart', 'profile-detail', 'profile-table', 'profile-agreement']) $(id).textContent = 'Statistics unavailable for this view.';
+    return;
+  }
+  $('belief-matrix').innerHTML = `<table class="belief-grid"><caption>Every belief across four benchmarks · Luna and Terra Δ in percentage points</caption><thead><tr><th scope="col">Belief / planting</th>${BENCHES.map((benchmark, index) => `<th scope="col">${escapeHTML(BENCH_LABELS[index])}<span class="belief-name">${escapeHTML(DATA.metrics[benchmark].label)}${benchmark === 'agentharm' ? ' · NOT safety' : ''}</span></th>`).join('')}</tr></thead><tbody>${DATA.beliefs.map(belief => methods.map(placement => `<tr data-belief="${escapeHTML(belief.id)}" data-method="${placement}"${belief.id === beliefId ? ' class="selected-belief"' : ''}><th scope="row"><button type="button" class="belief-select" data-belief="${escapeHTML(belief.id)}" aria-pressed="${belief.id === beliefId}" aria-label="View ${escapeHTML(beliefLabel(belief.id))} across benchmarks">${escapeHTML(belief.id)}</button><span class="belief-name">${escapeHTML(shortName(belief))}</span><span class="method">${placement}</span></th>${BENCHES.map(benchmark => profileCellHTML(view, benchmark, belief, placement)).join('')}</tr>`).join('')).join('')}</tbody></table>`;
+  $('belief-matrix').onclick = event => {
+    const button = event.target.closest('button[data-belief]');
+    if (!button) return;
+    $('profile-belief').value = button.dataset.belief;
+    renderBeliefProfiles(view, method);
+    $('profile-heading').tabIndex = -1;
+    $('profile-heading').focus();
+    $('profile-heading').scrollIntoView({block: 'start'});
+  };
+  $('profile-agreement').innerHTML = methods.map(placement => {
+    const points = view.points.filter(point => point.belief_id === beliefId && point.method === placement);
+    const counts = Object.fromEntries(Object.keys(DIRECTION_LABELS).map(key => [key, 0]));
+    for (const point of points) counts[directionAgreement(point)]++;
+    return `<p><strong>${escapeHTML(beliefId)} · ${placement}</strong> · ${points.length} benchmarks: ${counts.positive + counts.negative} same nonzero direction / ${counts.opposite} opposite / ${counts.one_zero} one zero / ${counts.both_zero} both zero / ${counts.unknown} unknown.</p>`;
+  }).join('') + '<p class="fine">These counts describe point estimates, not significance, equivalent magnitudes, or independent replications.</p>';
+  const rows = BENCHES.flatMap((benchmark, index) => methods.map(placement => ({
+    benchmark, belief_id: beliefId, method: placement,
+    label: `${BENCH_LABELS[index]} · ${placement}`, sublabel: DATA.metrics[benchmark].label
+  })));
+  renderPairedPlot(view, rows, `${beliefLabel(beliefId)} · across benchmarks`, 'profile');
+}
+
+function renderPairedPlot(view, rows, title, id) {
+  const cells = rows.flatMap(row => ['luna', 'terra'].map(model => statisticsCell(view, model, row.benchmark, row.belief_id, row.method)).filter(Boolean));
+  const profile = id === 'profile';
+  // A fixed range across beliefs makes switching profile selections comparable.
+  const rangeCells = profile ? view.cells.filter(cell => rows.some(row => row.method === cell.method)) : cells;
+  const values = rangeCells.flatMap(cell => [cell.estimate, ...(validInterval(cell.ci95) ? cell.ci95 : [])]).filter(Number.isFinite);
   const limit = Math.max(.01, ...values.map(Math.abs)) * 1.12;
-  const width = 960, left = 185, right = 90, top = 48, rowHeight = 46;
+  const width = 1000, left = profile ? 310 : 185, right = 90, top = 48, rowHeight = profile ? 60 : 46;
   const bottom = top + rows.length * rowHeight;
   const height = bottom + 65;
   const x = value => left + (value + limit) / (2 * limit) * (width - left - right);
@@ -238,9 +303,10 @@ function renderEffectPlot(view, method) {
   rows.forEach((row, rowIndex) => {
     const center = top + rowIndex * rowHeight + rowHeight / 2;
     content += svgLine(left, center + rowHeight / 2, width - right, center + rowHeight / 2, 'row-line');
-    content += svgText(left - 15, center + 4, `${row.belief.id} · ${row.method}`, 'text-anchor="end" class="belief-axis-label"');
+    content += svgText(left - 15, center + (row.sublabel ? -4 : 4), row.label, 'text-anchor="end" class="belief-axis-label"');
+    if (row.sublabel) content += svgText(left - 15, center + 12, row.sublabel, 'text-anchor="end" class="metric-axis-label"');
     ['luna', 'terra'].forEach((model, modelIndex) => {
-      const cell = statisticsCell(view, model, benchmark, row.belief.id, row.method);
+      const cell = statisticsCell(view, model, row.benchmark, row.belief_id, row.method);
       const y = center + (modelIndex === 0 ? -8 : 8);
       if (!cell || !Number.isFinite(cell.estimate)) {
         content += svgText(left + 8, y + 4, `${MODEL_LABELS[model]}: unknown`, 'class="missing-label"');
@@ -256,17 +322,25 @@ function renderEffectPlot(view, method) {
       mark += `<rect x="${cx - 11}" y="${y - 8}" width="22" height="16" class="point-hit"/>`;
       mark += svgSymbol(cx, y, model === 'terra', color);
       if (cell.significant) mark += svgText(cx + 9, y + 4, '★', 'class="significance-symbol"');
-      const description = effectDescription(cell);
-      records.push({html: effectDetailsHTML(cell)});
-      content += interactivePoint(records.length - 1, description, 'effect-detail', mark);
+      const point = profile ? view.points.find(item => item.benchmark === row.benchmark && item.belief_id === row.belief_id && item.method === row.method) : null;
+      records.push({html: effectDetailsHTML(cell) + (profile ? modelDifferenceHTML(point) : '')});
+      content += interactivePoint(records.length - 1, effectDescription(cell), `${id}-detail`, mark);
     });
   });
-  const title = `${BENCH_LABELS[benchmarkIndex]} · ${DATA.metrics[benchmark].label}`;
-  $('effect-heading').textContent = `${title} · per-belief effects`;
-  $('effect-chart').innerHTML = svgFrame('effect', `${title}: Luna and Terra paired effects`, 'Categorical belief and method rows; no lines connect beliefs. Circle: Luna; square: Terra. Horizontal intervals are pointwise 95% task-bootstrap CIs. Both model series use the same signed color scale as the matrix. Full belief names, estimates and tests are available in point details and the table.', width, height, content);
-  bindPointDetails($('effect-chart'), $('effect-detail'), records);
-  if (!records.length) $('effect-detail').textContent = 'No estimable paired effects for this selection; unknown scores have not been plotted as zero.';
-  $('effect-table').innerHTML = effectsTable(cells, `${title} · ${method === 'all' ? 'P1 + P2' : method} · Luna and Terra`);
+  $(`${id}-heading`).textContent = title;
+  $(`${id}-chart`).innerHTML = svgFrame(id, `${title}: Luna and Terra paired effects`, 'Categorical rows; no line joins different benchmarks or beliefs. Circle: Luna; square: Terra. Horizontal intervals are pointwise 95% task-bootstrap CIs. Signed native effects are not safety-normalized. Select points for benchmark meanings, estimates, counts and tests.', width, height, content);
+  bindPointDetails($(`${id}-chart`), $(`${id}-detail`), records);
+  if (!records.length) $(`${id}-detail`).textContent = 'No estimable paired effects for this selection; unknown scores have not been plotted as zero.';
+  $(`${id}-table`).innerHTML = effectsTable(cells, `${title} · Luna and Terra`);
+}
+
+function renderEffectPlot(view, method) {
+  const benchmark = $('chart-benchmark').value;
+  const methods = method === 'all' ? ['P1', 'P2'] : [method];
+  const rows = DATA.beliefs.flatMap(belief => methods.map(placement => ({
+    benchmark, belief_id: belief.id, method: placement, label: `${belief.id} · ${placement}`
+  })));
+  renderPairedPlot(view, rows, `${BENCH_LABELS[BENCHES.indexOf(benchmark)]} · ${DATA.metrics[benchmark].label} · across beliefs`, 'effect');
 }
 
 function correlationHTML(correlation, label) {
@@ -337,6 +411,7 @@ function renderScatter(view, benchmark, method) {
 function renderCharts() {
   const view = selectedStatistics();
   const method = $('chart-method').value;
+  renderBeliefProfiles(view, method);
   renderHeatmapKey(view, true, 'chart-heatmap-key');
   const protocol = $('protocol-filter').selectedOptions[0].textContent;
   const lexical = $('lexical-filter').selectedOptions[0].textContent;
@@ -370,6 +445,8 @@ function renderCharts() {
 
 renderOverview();
 renderMetricGuide();
+$('profile-belief').innerHTML = DATA.beliefs.map(belief => `<option value="${escapeHTML(belief.id)}">${escapeHTML(beliefLabel(belief.id))}</option>`).join('');
+$('profile-belief').addEventListener('change', () => renderBeliefProfiles(selectedStatistics(), $('chart-method').value));
 for (const id of ['model-filter', 'display-filter']) $(id).addEventListener('change', renderMatrix);
 for (const id of ['protocol-filter', 'lexical-filter', 'comparison-filter']) $(id).addEventListener('change', () => {
   renderMatrix();

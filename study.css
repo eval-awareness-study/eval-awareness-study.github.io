@@ -85,3 +85,24 @@
 #statistics-methods{margin-top:28px}
 @media(max-width:760px){.scatter-grid{grid-template-columns:minmax(0,1fr);gap:26px}.scatter-panel{max-width:560px;width:100%;justify-self:center}.chart-filters{grid-template-columns:minmax(0,1fr)}.chart-filters label:last-child{grid-column:auto}.comparison-section{margin-top:30px}.heatmap-key{font-size:11px}.chart-detail{max-height:270px}}
 @media print{.comparison-section{break-before:page}.chart-scroll{overflow:visible}.chart-scroll svg{min-width:0}.scatter-grid{gap:18px}.chart-detail{display:none}.scatter-panel{break-inside:avoid}}
+
+/* The primary table holds belief and planting fixed, showing both models. */
+#belief-profiles{margin-top:12px;padding-top:8px;border-top:0}
+.belief-grid{min-width:1000px;table-layout:fixed;font-size:12px}
+.belief-grid th:first-child{width:16%}
+.belief-grid td{vertical-align:top}
+.belief-grid .belief-name{font-size:11px;line-height:1.5}
+.belief-grid .selected-belief>th{border-left:3px solid var(--teal);padding-left:12px}
+.belief-select{font:600 13px ui-sans-serif,system-ui,sans-serif;min-height:36px;min-width:42px;padding:3px 8px;margin:0 0 4px;border:1px solid #cdd3cc;border-radius:3px;background:transparent;color:var(--ink);cursor:pointer}
+.belief-select[aria-pressed=true]{border-color:var(--teal);background:#edf3ef}
+.belief-select:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.belief-estimate{display:flex;justify-content:space-between;gap:6px;padding:4px 6px;margin:2px 0;font-variant-numeric:tabular-nums;white-space:nowrap}
+.belief-estimate .significance{font-size:11px}
+.profile-direction{display:block;font:11px/1.5 ui-sans-serif,system-ui,sans-serif;margin:6px 0;color:#45555d}
+.belief-grid .cell-details,.belief-grid .cell-details>summary{font-size:11px}
+.belief-grid .cell-details p{margin:10px 0;line-height:1.6}
+.belief-grid .cell-details .count{display:block;font-size:10px;line-height:1.6}
+.comparison-section .metric-axis-label{font-size:10px;fill:#66706f}
+#profile-agreement p{margin-bottom:7px}
+#single-model-results>summary,#model-comparison>summary{font-size:17px;font-weight:600}
+#model-comparison[open]>summary{margin-bottom:20px}
