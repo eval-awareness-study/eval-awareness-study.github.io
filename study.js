@@ -50,6 +50,7 @@
   const corrected = row => finite(row?.estimate) && finite(row?.p_adjusted) && row.p_adjusted <= .05 && row.n_clusters > 2;
   const reversal = row => row?.robust_reversal === true && row.n_clusters > 2;
   const star = row => corrected(row) ? ' ★' : '';
+  const significance = row => !finite(row?.estimate) ? 'Unavailable' : row.n_clusters <= 2 ? 'Inconclusive' : !finite(row.p_adjusted) ? 'Unavailable' : corrected(row) ? 'Significant' : 'Not significant';
   const benchmark = () => BENCHMARKS.find(row => row.id === current().benchmark);
   const direction = row => row?.direction === 'higher' ? 'Higher is better on this metric' : row?.direction === 'lower' ? 'Lower is better on this metric' : (row?.direction || 'Preferred direction unspecified');
   const methodLabel = id => ({P1: 'P1 · contextual documents', P2: 'P2 · explicit system notice'}[id] || id);
@@ -98,7 +99,7 @@
       byKey.get(key).push(row);
     });
     groups.forEach(group => group.sort(modelOrder));
-    const width = difference ? 1300 : 1100, left = difference ? 530 : 335, right = difference ? 1100 : 900, top = 45;
+    const width = difference ? 1300 : 1100, left = difference ? 530 : 335, right = difference ? 950 : 750, top = 45;
     const labels = groups.map(group => label(group[0]).split('\n').flatMap(part => {
       const lines = [''];
       part.split(' ').forEach(word => {
@@ -122,6 +123,8 @@
     svg += text(left, 18, difference ? 'More negative A−B difference' : 'Lower native score', 'class="axis-label"');
     svg += text(right, 18, difference ? 'More positive A−B difference' : 'Higher native score', 'text-anchor="end" class="axis-label"');
     svg += text(estimateX, 18, `Estimate · ${scoreUnit()}`, 'class="axis-label"');
+    svg += text(right + 150, 18, 'Holm p', 'class="axis-label"');
+    svg += text(right + 230, 18, 'Result · α = .05', 'class="axis-label"');
     groups.forEach((group, index) => {
       const center = top + index * step + step / 2;
       svg += line(0, center + step / 2, width, center + step / 2, 'row-line');
@@ -135,9 +138,11 @@
         if (!finite(row.estimate)) {
           svg += text(x(0) + 10, y + 4, `${modelLabel(row.model)}: estimate unavailable`, 'class="missing-label"');
           svg += text(estimateX, y + 4, `${modelShort(row.model)} unavailable`, `class="axis-label" style="fill:${style.text}"`);
+          svg += text(right + 150, y + 4, '—', 'class="axis-label"');
+          svg += text(right + 230, y + 4, significance(row), 'class="axis-label"');
           return;
         }
-        const description = `${name}: ${pp(row.estimate)}; CI ${ci(row.ci95)}; Holm p ${pvalue(row.p_adjusted)}; ${count(row.n_pairs)} paired items, ${count(row.n_clusters)} clusters; ${uncertainty(row)}${difference ? `; ${row.opposite_signs ? 'opposite point signs' : 'no opposite point signs'}; ${reversal(row) ? 'supported reversal' : 'no supported reversal'}` : ''}`;
+        const description = `${name}: ${pp(row.estimate)}; CI ${ci(row.ci95)}; raw p ${pvalue(row.p_value)}; Holm p ${pvalue(row.p_adjusted)}; ${significance(row)}; ${count(row.n_pairs)} paired items, ${count(row.n_clusters)} clusters; ${uncertainty(row)}${difference ? `; ${row.opposite_signs ? 'opposite point signs' : 'no opposite point signs'}; ${reversal(row) ? 'supported reversal' : 'no supported reversal'}` : ''}`;
         svg += `<g class="point-focus" tabindex="0" role="img" aria-label="${html(description)}"><title>${html(description)}</title>`;
         if (validCI(row.ci95)) {
           svg += `<path d="M${x(row.ci95[0])},${y - 4}v8 M${x(row.ci95[0])},${y}H${x(row.ci95[1])} M${x(row.ci95[1])},${y - 4}v8" style="stroke:${style.fill}" fill="none" class="ci-whisker"/>`;
@@ -145,7 +150,9 @@
         svg += `<circle cx="${x(row.estimate)}" cy="${y}" r="9" class="focus-ring"/>`;
         svg += row.method === 'P2' ? `<rect x="${x(row.estimate) - 4.5}" y="${y - 4.5}" width="9" height="9" style="fill:${style.fill}" class="data-point"/>` : `<circle cx="${x(row.estimate)}" cy="${y}" r="5" style="fill:${style.fill}" class="data-point"/>`;
         svg += '</g>';
-        svg += text(estimateX, y + 4, `${modelShort(row.model)} ${signed(row.estimate)}${star(row)}${!validCI(row.ci95) ? ' · no CI' : ''}${difference && reversal(row) ? ' · reversal' : ''}`, `class="axis-label" style="fill:${style.text}"`);
+        svg += text(estimateX, y + 4, `${modelShort(row.model)} ${signed(row.estimate)}${star(row)}`, `class="axis-label" style="fill:${style.text}"`);
+        svg += text(right + 150, y + 4, pvalue(row.p_adjusted), `class="axis-label" style="fill:${style.text}"`);
+        svg += text(right + 230, y + 4, significance(row), `class="axis-label" style="fill:${style.text}"`);
       });
     });
     svg += text((left + right) / 2, bottom + 49, `Dot = estimate, ${difference ? '(A − neutral A) − (B − neutral B)' : 'treatment − reference'} · ${scoreUnit()}`, 'text-anchor="middle" class="axis-label"');
@@ -169,7 +176,7 @@
   function effectTable(rows) {
     return table(['Belief / method / reference', 'Model', 'Δ', 'Pointwise 95% CI', 'Pairs / assigned', 'Clusters', 'Raw p', 'Holm p · 336', 'All-assigned Δ bounds', 'Inference'], rows.map(row => [
       `${html(beliefLabel(row.belief))}<span class="subtext">${html(row.method)} · ${html(row.reference)}</span>`, html(modelLabel(row.model)),
-      `<span class="number">${pp(row.estimate)}${star(row)}</span>`, ci(row.ci95), `${count(row.n_pairs)} / ${count(row.n_assigned)}`, count(row.n_clusters), pvalue(row.p_value), pvalue(row.p_adjusted), ci(row.missing_bounds), uncertainty(row)
+      `<span class="number">${pp(row.estimate)}${star(row)}</span>`, ci(row.ci95), `${count(row.n_pairs)} / ${count(row.n_assigned)}`, count(row.n_clusters), pvalue(row.p_value), pvalue(row.p_adjusted), ci(row.missing_bounds), `${significance(row)} · ${uncertainty(row)}`
     ]), 'effect-table');
   }
 
@@ -194,6 +201,12 @@
     $('metric-context').textContent = nativeContext(benchmark());
     $('cluster-warning').hidden = !rows.some(row => row.n_clusters <= 2);
     $('cluster-warning').textContent = 'Cluster-inference warning: this selection includes contrasts with at most two clusters. In particular, the misalignment benchmark has only two scenario families. Point estimates are descriptive; reliable differences or reversals cannot be inferred from them.';
+    $('effect-significance-summary').textContent = MODELS.map(model => {
+      const own = rows.filter(row => row.model === model);
+      const inconclusive = own.filter(row => significance(row) === 'Inconclusive').length;
+      const unavailable = own.filter(row => significance(row) === 'Unavailable').length;
+      return `${modelLabel(model)}: ${own.filter(corrected).length} of ${own.length} selected effects significant after Holm correction${inconclusive ? `; ${inconclusive} inconclusive (too few clusters)` : ''}${unavailable ? `; ${unavailable} unavailable` : ''}.`;
+    }).join(' ');
     forest('effect-chart', rows, row => `${beliefLabel(row.belief)}\n${row.method}`, `${selectionLabel()}: all supplied-message effects relative to matched neutral`);
     $('effect-table').innerHTML = effectTable(rows);
   }
