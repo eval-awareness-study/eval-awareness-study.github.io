@@ -72,6 +72,9 @@ tbody th { font-weight: 600; }
 .difference-table { min-width: 1330px; }
 .coverage-table { min-width: 1040px; }
 .level-table { min-width: 760px; }
+.p3-contrast-table { min-width: 1100px; }
+.p3-contrast-table th:first-child, .difference-table tbody th { min-width: 240px; }
+.p3-counts { grid-template-columns: repeat(3, 1fr); }
 .unknown { color: #6c6459; font-style: italic; }
 .negative { color: var(--blue); }
 .positive { color: var(--orange); }
@@ -97,6 +100,11 @@ svg .focus-ring { fill: transparent; stroke: transparent; }
 .scatter-panel svg { display: block; width: 100%; height: auto; }
 .association-summary { font-size: 12px; line-height: 1.75; margin: 4px 0 14px; }
 .association-summary strong { font-size: 18px; font-weight: 600; }
+.association-inference { padding: 12px 0; border-top: 1px solid var(--line); font: 12px/1.75 ui-sans-serif, system-ui, sans-serif; }
+.association-inference > strong { display: block; margin-bottom: 6px; }
+.association-inference p { margin-bottom: 8px; }
+.scatter-key { columns: 2; column-gap: 24px; padding-left: 26px; font: 11px/1.7 ui-sans-serif, system-ui, sans-serif; }
+.scatter-key li { break-inside: avoid; margin-bottom: 6px; padding-left: 2px; }
 .scatter-detail { min-height: 54px; padding: 10px 12px; font: 11px/1.7 ui-sans-serif, system-ui, sans-serif; background: var(--wash); margin: 10px 0 0; overflow-wrap: anywhere; }
 details { font-size: 13px; line-height: 1.8; border-top: 1px solid var(--line); padding: 14px 0; margin: 10px 0 2px; }
 summary { font-weight: 600; color: #365853; padding: 3px 0; }
@@ -139,6 +147,7 @@ details p:last-child { margin-bottom: 0; }
   .summary-card span { margin: 0; }
   .section-nav { gap: 10px 15px; }
   .scatter-panel { padding: 11px; }
+  .scatter-key { columns: 1; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 @media print {
