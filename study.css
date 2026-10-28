@@ -34,7 +34,7 @@ footer { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 22px;
 .section-nav { display: flex; flex-wrap: wrap; gap: 12px 25px; margin-top: 24px; font-size: 12px; }
 .section-heading { display: flex; align-items: baseline; gap: 14px; margin-bottom: 24px; }
 .section-number { font: 12px ui-monospace, monospace; color: var(--teal); }
-.filters { display: grid; grid-template-columns: 1.1fr 1.65fr 1fr 1.2fr; gap: 14px; padding: 19px; border: 1px solid var(--line); background: var(--wash); border-radius: 5px; }
+.filters { display: grid; grid-template-columns: 1.65fr 1fr 1.2fr; gap: 14px; padding: 19px; border: 1px solid var(--line); background: var(--wash); border-radius: 5px; }
 .filters label { min-width: 0; }
 label { display: block; font-size: 12px; font-weight: 600; line-height: 1.4; }
 select { display: block; width: 100%; min-height: 42px; margin-top: 7px; border: 1px solid #bdc8c1; border-radius: 3px; padding: 9px 30px 9px 10px; font: 12px ui-sans-serif, system-ui, sans-serif; color: var(--ink); background-color: var(--paper); }
@@ -64,7 +64,7 @@ tbody th { font-weight: 600; }
 .subtext { display: block; font-size: 10px; font-weight: 400; color: var(--muted); line-height: 1.7; }
 .heatmap { min-width: 1000px; table-layout: fixed; }
 .heatmap th:first-child { width: 210px; }
-.heatmap td { text-align: center; vertical-align: middle; font-size: 13px; }
+.heatmap td { text-align: center; vertical-align: middle; font-size: 13px; padding: 4px; }
 .heatmap td .subtext { font-size: 9px; }
 .heatmap th { padding: 9px; }
 .benchmark-button { width: 100%; border: 0; background: transparent; text-align: left; padding: 5px 2px; color: inherit; font: inherit; font-weight: 650; min-height: 44px; }
@@ -80,11 +80,14 @@ tbody th { font-weight: 600; }
 .pair-matrix thead th:not(:first-child) { text-align: center; }
 .pair-matrix tbody th { font-size: 11px; line-height: 1.5; }
 .pair-matrix td { position: relative; padding: 3px; vertical-align: middle; border-color: #e8ece6; }
-.pair-matrix button { display: block; width: 100%; min-height: 44px; border: 1px solid #cdd7d0; border-radius: 3px; color: var(--ink); padding: 5px 2px; font: 11px/1.4 ui-sans-serif, system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+.pair-matrix button { display: block; width: 100%; min-height: 44px; border: 1px solid #cdd7d0; border-radius: 3px; color: var(--ink); background: var(--paper); padding: 3px 2px; font: 11px/1.4 ui-sans-serif, system-ui, sans-serif; font-variant-numeric: tabular-nums; }
 .pair-matrix button[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--teal); border-color: var(--teal); }
 .pair-matrix .pair-omitted { background: #f7f8f3; }
 .pair-index { color: var(--muted); font-weight: 400; }
 .pair-caution { display: block; font-size: 9px; }
+.model-cell { display: block; padding: 3px 2px; border-radius: 2px; }
+.model-cell + .model-cell { margin-top: 2px; }
+.model-faded { color: #4b5a58; }
 .pair-detail { padding: 17px; border: 1px solid var(--line); border-left: 3px solid var(--teal); background: var(--wash); font: 13px/1.8 ui-sans-serif, system-ui, sans-serif; overflow-wrap: anywhere; }
 .pair-detail h4 { margin-bottom: 12px; }
 .pair-detail p:last-child { margin: 0; }
