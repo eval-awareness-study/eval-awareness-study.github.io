@@ -109,6 +109,15 @@ details p:last-child { margin-bottom: 0; }
 .export-links { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 15px; font-size: 12px; }
 .export-links a { border: 1px solid #9bb3a9; padding: 10px 15px; border-radius: 3px; background: #f4f7f0; }
 .empty { padding: 24px; background: var(--wash); color: var(--muted); font-size: 13px; }
+.guide-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 370px), 1fr)); gap: 0 32px; }
+.guide-grid > div { min-width: 0; }
+.guide-table { font-size: 14px; }
+.guide-table th:first-child { width: 115px; }
+.glossary, .test-guide { font: 14px/1.8 ui-sans-serif, system-ui, sans-serif; }
+.glossary dt { font-weight: 650; margin: 18px 0 4px; }
+.glossary dd { margin: 0; overflow-wrap: anywhere; }
+.test-guide { padding-left: 23px; }
+.test-guide li { margin-bottom: 18px; padding-left: 5px; }
 [hidden] { display: none !important; }
 @media (max-width: 800px) {
   main { padding: 34px 20px 20px; }
