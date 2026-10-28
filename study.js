@@ -83,7 +83,7 @@
   const extent = (rows, fields = ['estimate']) => Math.max(.02, ...rows.flatMap(row => [...fields.map(field => row[field]), ...(validCI(row.ci95) ? row.ci95 : [])]).filter(finite).map(Math.abs)) * 1.12;
   const uncertainty = row => row.n_clusters <= 2 ? 'inconclusive: at most two clusters' : validCI(row.ci95) ? 'pointwise 95% interval' : 'CI unavailable';
 
-  function forest(id, rows, label, title, difference = false) {
+  function forest(id, rows, label, title, difference = false, sharedLimit = null, compact = false) {
     if (!rows.length) {
       $(id).innerHTML = '<p class="empty">No contrast data available for this selection.</p>';
       return;
@@ -99,7 +99,9 @@
       byKey.get(key).push(row);
     });
     groups.forEach(group => group.sort(modelOrder));
-    const width = difference ? 1300 : 1100, left = difference ? 530 : 335, right = difference ? 950 : 750, top = 45;
+    const width = compact ? 720 : difference ? 1300 : 1100;
+    const left = compact ? 210 : difference ? 530 : 335, right = compact ? 370 : difference ? 950 : 750, top = 45;
+    const pX = compact ? 490 : right + 150, resultX = compact ? 575 : right + 230;
     const labels = groups.map(group => label(group[0]).split('\n').flatMap(part => {
       const lines = [''];
       part.split(' ').forEach(word => {
@@ -112,7 +114,7 @@
     const step = Math.max(difference ? 58 : 44, ...labels.map(parts => parts.length * 17 + 14));
     const estimateX = right + 30, gap = 13;
     const bottom = top + groups.length * step, height = bottom + 86;
-    const limit = extent(rows), x = value => left + (value + limit) / (2 * limit) * (right - left);
+    const limit = sharedLimit ?? extent(rows), x = value => left + (value + limit) / (2 * limit) * (right - left);
     const titleId = `${id}-title`, descId = `${id}-desc`;
     let svg = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="${titleId} ${descId}"><title id="${titleId}">${html(title)}</title><desc id="${descId}">Signed native-score differences in ${html(scoreUnit())}. Each row holds every model: ${html(modelLegendText())}. Each dot is a point estimate; circles are P1 and squares P2. Each bar is a pointwise 95 percent cluster-bootstrap confidence interval when available. A star denotes Holm-adjusted p at most .05. Full statistics are provided in the accompanying table.</desc>`;
     for (let tick = -2; tick <= 2; tick++) {
@@ -120,11 +122,11 @@
       svg += line(x(value), top - 15, x(value), bottom, tick === 0 ? 'zero-line' : 'grid-line');
       svg += text(x(value), bottom + 22, (value * 100).toFixed(1), 'text-anchor="middle" class="axis-label"');
     }
-    svg += text(left, 18, difference ? 'More negative A−B difference' : 'Lower native score', 'class="axis-label"');
-    svg += text(right, 18, difference ? 'More positive A−B difference' : 'Higher native score', 'text-anchor="end" class="axis-label"');
+    svg += text(left, 18, compact ? (difference ? 'A−B < 0' : 'Lower') : difference ? 'More negative A−B difference' : 'Lower native score', 'class="axis-label"');
+    svg += text(right, 18, compact ? (difference ? 'A−B > 0' : 'Higher') : difference ? 'More positive A−B difference' : 'Higher native score', 'text-anchor="end" class="axis-label"');
     svg += text(estimateX, 18, `Estimate · ${scoreUnit()}`, 'class="axis-label"');
-    svg += text(right + 150, 18, 'Holm p', 'class="axis-label"');
-    svg += text(right + 230, 18, 'Result · α = .05', 'class="axis-label"');
+    svg += text(pX, 18, 'Holm p', 'class="axis-label"');
+    svg += text(resultX, 18, 'Result · α = .05', 'class="axis-label"');
     groups.forEach((group, index) => {
       const center = top + index * step + step / 2;
       svg += line(0, center + step / 2, width, center + step / 2, 'row-line');
@@ -138,8 +140,8 @@
         if (!finite(row.estimate)) {
           svg += text(x(0) + 10, y + 4, `${modelLabel(row.model)}: estimate unavailable`, 'class="missing-label"');
           svg += text(estimateX, y + 4, `${modelShort(row.model)} unavailable`, `class="axis-label" style="fill:${style.text}"`);
-          svg += text(right + 150, y + 4, '—', 'class="axis-label"');
-          svg += text(right + 230, y + 4, significance(row), 'class="axis-label"');
+          svg += text(pX, y + 4, '—', 'class="axis-label"');
+          svg += text(resultX, y + 4, significance(row), 'class="axis-label"');
           return;
         }
         const description = `${name}: ${pp(row.estimate)}; CI ${ci(row.ci95)}; raw p ${pvalue(row.p_value)}; Holm p ${pvalue(row.p_adjusted)}; ${significance(row)}; ${count(row.n_pairs)} paired items, ${count(row.n_clusters)} clusters; ${uncertainty(row)}${difference ? `; ${row.opposite_signs ? 'opposite point signs' : 'no opposite point signs'}; ${reversal(row) ? 'supported reversal' : 'no supported reversal'}` : ''}`;
@@ -151,13 +153,13 @@
         svg += row.method === 'P2' ? `<rect x="${x(row.estimate) - 4.5}" y="${y - 4.5}" width="9" height="9" style="fill:${style.fill}" class="data-point"/>` : `<circle cx="${x(row.estimate)}" cy="${y}" r="5" style="fill:${style.fill}" class="data-point"/>`;
         svg += '</g>';
         svg += text(estimateX, y + 4, `${modelShort(row.model)} ${signed(row.estimate)}${star(row)}`, `class="axis-label" style="fill:${style.text}"`);
-        svg += text(right + 150, y + 4, pvalue(row.p_adjusted), `class="axis-label" style="fill:${style.text}"`);
-        svg += text(right + 230, y + 4, significance(row), `class="axis-label" style="fill:${style.text}"`);
+        svg += text(pX, y + 4, pvalue(row.p_adjusted), `class="axis-label" style="fill:${style.text}"`);
+        svg += text(resultX, y + 4, significance(row), `class="axis-label" style="fill:${style.text}"`);
       });
     });
     svg += text((left + right) / 2, bottom + 49, `Dot = estimate, ${difference ? '(A − neutral A) − (B − neutral B)' : 'treatment − reference'} · ${scoreUnit()}`, 'text-anchor="middle" class="axis-label"');
     // Key: the two models, the interval bar and the method shapes.
-    let kx = left;
+    let kx = compact ? 8 : left;
     const ky = bottom + 74, advance = caption => caption.length * 6.4 + 30;
     MODELS.forEach(model => {
       const caption = `${modelLabel(model)} (${MODEL_STYLE[model].name})`;
@@ -171,6 +173,15 @@
     svg += `<circle cx="${kx + 5}" cy="${ky - 4}" r="4.5" style="fill:var(--muted)"/>${text(kx + 14, ky, 'P1', 'class="axis-label"')}`;
     svg += `<rect x="${kx + 38}" y="${ky - 8.5}" width="9" height="9" style="fill:var(--muted)"/>${text(kx + 52, ky, 'P2', 'class="axis-label"')}`;
     $(id).innerHTML = `${svg}</svg>`;
+  }
+
+  function methodForests(id, rows, label, title, difference = false) {
+    const selectedMethods = methods(), together = selectedMethods.length > 1;
+    const container = $(id);
+    container.classList.toggle('method-panels', together);
+    container.innerHTML = selectedMethods.map(method => `<article class="method-panel"><h4>${html(methodLabel(method))}</h4><div id="${id}-${method}" class="chart-scroll" tabindex="0" role="region" aria-label="${html(methodLabel(method))} · ${html(title)}"></div></article>`).join('');
+    const limit = extent(rows);
+    selectedMethods.forEach(method => forest(`${id}-${method}`, rows.filter(row => row.method === method), label, `${methodLabel(method)}: ${title}`, difference, limit, together));
   }
 
   function effectTable(rows) {
@@ -207,7 +218,7 @@
       const unavailable = own.filter(row => significance(row) === 'Unavailable').length;
       return `${modelLabel(model)}: ${own.filter(corrected).length} of ${own.length} selected effects significant after Holm correction${inconclusive ? `; ${inconclusive} inconclusive (too few clusters)` : ''}${unavailable ? `; ${unavailable} unavailable` : ''}.`;
     }).join(' ');
-    forest('effect-chart', rows, row => `${beliefLabel(row.belief)}\n${row.method}`, `${selectionLabel()}: all supplied-message effects relative to matched neutral`);
+    methodForests('effect-chart', rows, row => beliefLabel(row.belief), `${selectionLabel()}: all supplied-message effects relative to matched neutral`);
     $('effect-table').innerHTML = effectTable(rows);
   }
 
@@ -304,7 +315,7 @@
     } else {
       $('difference-matrices').innerHTML = '';
       const plotted = [...rows].sort((a, b) => a.method.localeCompare(b.method) || beliefLabel(a.belief_a).localeCompare(beliefLabel(b.belief_a)) || beliefLabel(a.belief_b).localeCompare(beliefLabel(b.belief_b)));
-      forest('difference-chart', plotted, row => `A: ${beliefLabel(row.belief_a)}\nB: ${beliefLabel(row.belief_b)} · ${row.method}`, `${selectionLabel()}: paired message-effect differences`, true);
+      methodForests('difference-chart', plotted, row => `A: ${beliefLabel(row.belief_a)}\nB: ${beliefLabel(row.belief_b)}`, `${selectionLabel()}: paired message-effect differences`, true);
     }
     $('difference-table-heading').textContent = `All ${count(rows.length)} selected direct differences · including unsupported and unavailable results`;
     $('difference-table').innerHTML = table(['A − B / method', 'Model', 'Direct difference', 'Pointwise 95% CI', 'Effect A · common items', 'Effect B · common items', 'Pairs', 'Clusters', 'Raw p', 'Holm p · 1,540', 'Opposite point signs?', 'Supported reversal?', 'Inference'], [...rows].sort((a, b) => a.method.localeCompare(b.method) || a.belief_a.localeCompare(b.belief_a) || a.belief_b.localeCompare(b.belief_b) || modelOrder(a, b)).map(row => [
@@ -391,7 +402,7 @@
 
   function renderG1() {
     const rows = selected(view()?.effects).filter(row => String(row.belief).toUpperCase() === 'G1' && ['neutral', 'information'].includes(row.reference)).sort((a, b) => a.method.localeCompare(b.method) || (a.reference === b.reference ? 0 : a.reference === 'neutral' ? -1 : 1));
-    forest('g1-chart', rows, row => `Concrete criterion determines score\n${row.method} − ${row.reference} control`, 'Concrete-scoring-criterion effects relative to neutral and information controls');
+    methodForests('g1-chart', rows, row => `Concrete criterion determines score\n${row.reference} control`, 'Concrete-scoring-criterion effects relative to neutral and information controls');
     $('g1-table').innerHTML = effectTable(rows);
   }
 
