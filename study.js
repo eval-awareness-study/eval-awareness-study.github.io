@@ -5,7 +5,21 @@
   const DATA = JSON.parse($('study-data').textContent);
   const MODELS = ['qwen', 'gemma'].filter(id => DATA.models?.[id]);
   const BENCHMARKS = DATA.benchmarks || [];
-  const BELIEFS = DATA.beliefs || [];
+  const TARGET_NAMES = {
+    E0: 'Evaluation exists',
+    E1: 'Harm prevention is assessed',
+    E2: 'Appropriate assistance is assessed',
+    E3: 'Capability is assessed',
+    E4: 'Honesty and permitted behavior are assessed',
+    G1: 'A concrete criterion determines the score',
+    O1: 'An observer can access visible outputs',
+    W1: 'Scenario consequences are contained',
+    T1: 'The interaction is eligible for future training',
+    T2: 'Behavior can influence future learning',
+    D1: 'Greater demonstrated capability can restrict deployment'
+  };
+  const BELIEFS = (DATA.beliefs || []).map(row => ({...row, label: TARGET_NAMES[row.id] || row.label}));
+  const descriptiveText = value => String(value ?? '').replace(/(^|[^A-Za-z0-9])(E[0-4]|G1|O1|W1|T[12]|D1)(?![A-Za-z0-9])/g, (_, prefix, id) => `${prefix}${TARGET_NAMES[id]}`);
   const METHODS = ['P1', 'P2'];
   const html = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
   const finite = Number.isFinite;
@@ -30,6 +44,8 @@
   const star = row => corrected(row) ? ' ★' : '';
   const benchmark = () => BENCHMARKS.find(row => row.id === current().benchmark);
   const direction = row => row?.direction === 'higher' ? 'Higher is better on this metric' : row?.direction === 'lower' ? 'Lower is better on this metric' : (row?.direction || 'Preferred direction unspecified');
+  const methodLabel = id => ({P1: 'P1 · contextual documents', P2: 'P2 · explicit system notice'}[id] || id);
+  const selectionLabel = () => `${DATA.models[current().model]?.label || 'Selected model'} · ${benchmark()?.label || 'Selected benchmark'} · ${methods().map(methodLabel).join(' / ')} · ${current().view} scoring`;
   const nativeContext = row => `${row?.metric || 'Metric unavailable'} · ${direction(row)}. Positive Δ means more of the measured outcome; this is not a universal safety scale.${row?.id === 'fortress' ? ' Units are risk points on the rescaled 0–100 FORTRESS score, not harmful-response percentages. Higher means more risk; lower means less risk.' : ''}`;
 
   function table(headers, rows, className = '', caption = '') {
@@ -39,12 +55,13 @@
   function metadata(value) {
     if (value === null || value === undefined) return '<span class="unknown">unavailable</span>';
     if (Array.isArray(value)) return value.length ? `<ul>${value.map(item => `<li>${metadata(item)}</li>`).join('')}</ul>` : 'None recorded';
-    if (typeof value === 'object') return `<dl class="metadata">${Object.entries(value).map(([key, item]) => `<dt>${html(key.replaceAll('_', ' '))}</dt><dd>${metadata(item)}</dd>`).join('')}</dl>`;
-    return html(value);
+    if (typeof value === 'object') return `<dl class="metadata">${Object.entries(value).map(([key, item]) => `<dt>${html(descriptiveText(key).replaceAll('_', ' '))}</dt><dd>${metadata(item)}</dd>`).join('')}</dl>`;
+    return html(descriptiveText(value));
   }
 
   function signedColor(value, scale = 1, background = false) {
-    if (!finite(value) || Math.abs(value) < 1e-12) return background ? '#fffefa' : '#64716e';
+    if (!finite(value)) return background ? '#e6e9e7' : '#64716e';
+    if (Math.abs(value) < 1e-12) return background ? '#fffefa' : '#64716e';
     const base = value < 0 ? [39, 103, 155] : [174, 90, 34];
     const weight = background ? .06 + .28 * Math.min(1, Math.abs(value) / scale) : 1;
     return `rgb(${base.map((channel, index) => Math.round([255, 254, 250][index] * (1 - weight) + channel * weight)).join(',')})`;
@@ -60,7 +77,17 @@
       $(id).innerHTML = '<p class="empty">No contrast data available for this selection.</p>';
       return;
     }
-    const width = difference ? 1300 : 1100, left = difference ? 530 : 335, right = difference ? 1100 : 900, top = 45, step = difference ? 58 : 36;
+    const width = difference ? 1300 : 1100, left = difference ? 530 : 335, right = difference ? 1100 : 900, top = 45;
+    const labels = rows.map(row => label(row).split('\n').flatMap(part => {
+      const lines = [''];
+      part.split(' ').forEach(word => {
+        const last = lines.length - 1;
+        if (lines[last] && lines[last].length + word.length + 1 > Math.floor((left - 30) / 7)) lines.push(word);
+        else lines[last] += `${lines[last] ? ' ' : ''}${word}`;
+      });
+      return lines;
+    }));
+    const step = Math.max(difference ? 58 : 36, ...labels.map(parts => parts.length * 17 + 14));
     const estimateX = right + 30;
     const bottom = top + rows.length * step, height = bottom + 62;
     const limit = extent(rows), x = value => left + (value + limit) / (2 * limit) * (right - left);
@@ -79,7 +106,7 @@
       const name = label(row);
       const description = `${name}: ${pp(row.estimate)}; CI ${ci(row.ci95)}; Holm p ${pvalue(row.p_adjusted)}; ${count(row.n_pairs)} paired items, ${count(row.n_clusters)} clusters; ${uncertainty(row)}${difference ? `; ${row.opposite_signs ? 'opposite point signs' : 'no opposite point signs'}; ${reversal(row) ? 'supported reversal' : 'no supported reversal'}` : ''}`;
       svg += line(0, y + step / 2, width, y + step / 2, 'row-line');
-      name.split('\n').forEach((part, partIndex, parts) => {
+      labels[index].forEach((part, partIndex, parts) => {
         svg += text(8, y + 4 + (partIndex - (parts.length - 1) / 2) * 17, part, 'class="row-label"');
       });
       if (!finite(row.estimate)) {
@@ -123,18 +150,68 @@
     const rows = effects();
     const order = new Map(BELIEFS.map((row, index) => [row.id, index]));
     rows.sort((a, b) => (order.get(a.belief) ?? 100) - (order.get(b.belief) ?? 100) || a.method.localeCompare(b.method));
-    $('effect-heading').textContent = `${benchmark()?.label || 'Selected benchmark'} · all ${BELIEFS.length} belief targets`;
+    $('effect-heading').textContent = `${benchmark()?.label || 'Selected benchmark'} · all ${BELIEFS.length} supplied messages`;
+    $('effect-scope').textContent = `${selectionLabel()} · treatment − matched neutral on the same benchmark’s tasks.`;
     $('metric-context').textContent = nativeContext(benchmark());
     $('cluster-warning').hidden = !rows.some(row => row.n_clusters <= 2);
     $('cluster-warning').textContent = 'Cluster-inference warning: this selection includes contrasts with at most two clusters. In particular, the misalignment benchmark has only two scenario families. Point estimates are descriptive; reliable differences or reversals cannot be inferred from them.';
-    forest('effect-chart', rows, row => `${beliefLabel(row.belief)}\n${row.method}`, 'All selected belief-targeting effects relative to matched neutral');
+    forest('effect-chart', rows, row => `${beliefLabel(row.belief)}\n${row.method}`, `${selectionLabel()}: all supplied-message effects relative to matched neutral`);
     $('effect-table').innerHTML = effectTable(rows);
+  }
+
+  const matrixSelections = new Map();
+  let matrixRows = new Map();
+
+  function pairDescription(row) {
+    return `A: ${beliefLabel(row.belief_a)}. B: ${beliefLabel(row.belief_b)}. ${methodLabel(row.method)}. A−B: ${pp(row.estimate)}; pointwise 95% CI ${ci(row.ci95)}; Holm p ${pvalue(row.p_adjusted)}; ${count(row.n_pairs)} common-task pairs; ${count(row.n_clusters)} clusters; ${uncertainty(row)}${corrected(row) ? '; corrected evidence of a difference' : '; no corrected evidence of a difference'}.`;
+  }
+
+  function selectMatrixCell(button) {
+    const method = button.dataset.method, key = button.dataset.pair;
+    const row = matrixRows.get(`${method}|${key}`);
+    if (!row) return;
+    matrixSelections.set(method, key);
+    button.closest('.pair-matrix').querySelectorAll('button[data-pair]').forEach(cell => {
+      cell.setAttribute('aria-pressed', String(cell === button));
+    });
+    const exact = value => finite(value) ? String(value) : 'unavailable';
+    $(`pair-detail-${method}`).innerHTML = `<h4>A: ${html(beliefLabel(row.belief_a))}<br>B: ${html(beliefLabel(row.belief_b))}</h4>
+      <p><strong>A−B: ${pp(row.estimate)}${star(row)}</strong> · pointwise 95% CI ${ci(row.ci95)}<br>
+      Holm-adjusted p (1,540 planned): ${exact(row.p_adjusted)} · raw p: ${exact(row.p_value)}<br>
+      ${count(row.n_pairs)} common-task pairs · ${count(row.n_clusters)} clusters · ${uncertainty(row)}</p>
+      <p>Effects on these same common tasks: A − neutral A = ${pp(row.effect_a)}; B − neutral B = ${pp(row.effect_b)}.<br>
+      Opposite point signs: ${finite(row.effect_a) && finite(row.effect_b) ? (row.opposite_signs ? 'yes, descriptive only' : 'no') : 'unavailable'} · Supported reversal: ${reversal(row) ? 'yes' : 'no'}.</p>
+      <p class="fine">Unrounded native 0–1 units: difference ${exact(row.estimate)}; CI ${validCI(row.ci95) ? `[${row.ci95.map(exact).join(', ')}]` : 'unavailable'}. ${html(methodLabel(method))} · ${html(benchmark()?.label)}. A missing interval is not zero uncertainty; a missing estimate is not zero effect.</p>`;
+  }
+
+  function renderMatrices(rows) {
+    const scale = Math.max(.01, ...rows.map(row => Math.abs(row.estimate)).filter(finite));
+    matrixRows = new Map();
+    const index = new Map(rows.map(row => [`${row.method}|${row.belief_a}|${row.belief_b}`, row]));
+    $('difference-matrices').innerHTML = methods().map(method => {
+      const body = BELIEFS.map((a, ai) => `<tr><th scope="row"><span class="pair-index">${ai + 1}.</span> ${html(a.label)}</th>${BELIEFS.map((b, bi) => {
+        if (bi <= ai) return `<td class="pair-omitted"><span class="visually-hidden">${bi === ai ? 'Same message; not a comparison' : 'Duplicate comparison omitted; use the upper triangle'}</span></td>`;
+        const forward = index.get(`${method}|${a.id}|${b.id}`);
+        const reverse = index.get(`${method}|${b.id}|${a.id}`);
+        const row = forward || (reverse ? {...reverse, belief_a: a.id, belief_b: b.id, estimate: finite(reverse.estimate) ? -reverse.estimate : null, ci95: validCI(reverse.ci95) ? [-reverse.ci95[1], -reverse.ci95[0]] : null, effect_a: reverse.effect_b, effect_b: reverse.effect_a} : {belief_a: a.id, belief_b: b.id, method});
+        const key = `${ai}-${bi}`;
+        matrixRows.set(`${method}|${key}`, row);
+        const detail = pairDescription(row);
+        return `<td><button type="button" data-method="${method}" data-pair="${key}" aria-pressed="false" aria-controls="pair-detail-${method}" aria-label="${html(detail)}" title="${html(detail)}" style="background:${signedColor(row.estimate, scale, true)}">${finite(row.estimate) ? `${signed(row.estimate)}${star(row)}` : '—'}${row.n_clusters <= 2 ? '<span class="pair-caution" aria-hidden="true">≤2</span>' : ''}</button></td>`;
+      }).join('')}</tr>`).join('');
+      return `<article class="matrix-panel"><h4>${html(methodLabel(method))}</h4><div class="table-scroll" tabindex="0" role="region" aria-label="${html(methodLabel(method))}: all 55 unique same-benchmark comparisons"><table class="pair-matrix"><caption>Row A − column B · ${html(benchmark()?.label)} · ${html(scoreUnit())}. Column numbers are navigation positions matched to the numbered full message names on the rows, not target identifiers.</caption><thead><tr><th scope="col">Message A ↓ / message B →</th>${BELIEFS.map((target, i) => `<th scope="col" title="${html(target.label)}"><span aria-hidden="true">${i + 1}</span><span class="visually-hidden">${i + 1}. ${html(target.label)}</span></th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div><div id="pair-detail-${method}" class="pair-detail" aria-live="polite" aria-atomic="true"></div></article>`;
+    }).join('');
+    methods().forEach(method => {
+      const key = matrixSelections.get(method) || '0-1';
+      const button = $('difference-matrices').querySelector(`button[data-method="${method}"][data-pair="${key}"]`);
+      if (button) selectMatrixCell(button);
+    });
   }
 
   function renderDifferences() {
     const state = current();
-    $('difference-scope').textContent = `Detailed selection: ${DATA.models[state.model]?.label || state.model} · ${benchmark()?.label || state.benchmark} · ${methods().join(' + ')} · ${state.view} scoring. Not a cross-benchmark total.`;
-    $('difference-detail-heading').textContent = `${DATA.models[state.model]?.label || state.model} · ${benchmark()?.label || state.benchmark} · ${methods().join(' + ')} · ${state.view}: paired condition-effect differences`;
+    $('difference-scope').textContent = `${selectionLabel()} · same-benchmark comparisons, not a cross-benchmark total.`;
+    $('difference-detail-heading').textContent = `${benchmark()?.label || 'Selected benchmark'} · paired message-effect differences`;
     $('difference-metric-context').textContent = nativeContext(benchmark());
     $('difference-overview-note').textContent = `${state.view === 'recovered' ? 'Recovered' : 'Original'} scoring. Each cell shows corrected direct differences / estimable comparisons (55 planned). This overview ignores the model, benchmark and method filters. Holm correction still covers all 1,540 planned comparisons in this scoring view. Zero means no corrected evidence, not proof of equal effects.`;
     const overview = view()?.differences || [];
@@ -156,15 +233,18 @@
     const unsupported = opposite.length - supported.length;
     const g1Count = significant.filter(row => row.belief_a === 'G1' || row.belief_b === 'G1').length;
     $('difference-summary').textContent = `${count(rows.length)} selected comparisons: ${count(estimable.length)} with an estimate; ${count(significant.length)} with Holm-adjusted evidence of a direct difference (${count(g1Count)} involve the concrete-scoring-criterion condition); ${count(opposite.length)} with opposite point-estimate signs; ${count(supported.length)} supported reversals. ${count(unsupported)} opposite-sign comparisons do not meet the supported-reversal criterion. ${count(rows.length - estimable.length)} estimates unavailable. Counts apply only to the detailed selection above.`;
-    const plotted = [...rows].sort((a, b) => {
-      const aMagnitude = finite(a.estimate) ? Math.abs(a.estimate) : -1;
-      const bMagnitude = finite(b.estimate) ? Math.abs(b.estimate) : -1;
-      return bMagnitude - aMagnitude || a.method.localeCompare(b.method) || a.belief_a.localeCompare(b.belief_a) || a.belief_b.localeCompare(b.belief_b);
-    });
-    const limit = $('difference-limit').value;
-    const shown = limit === 'all' ? plotted : plotted.slice(0, Number(limit));
-    $('difference-selection-note').textContent = `Showing ${count(shown.length)} of ${count(rows.length)} selected comparisons, ranked by absolute estimated difference, regardless of sign or significance. ${count(significant.length)} corrected direct differences and ${count(supported.length)} supported reversals occur in the full selected set.`;
-    forest('difference-chart', shown, row => `A: ${beliefLabel(row.belief_a)}\nB: ${beliefLabel(row.belief_b)} · ${row.method}${reversal(row) ? ' · reversal' : ''}`, $('difference-detail-heading').textContent, true);
+    const matrix = $('difference-view').value === 'matrix';
+    $('difference-matrices').hidden = !matrix;
+    $('difference-chart').hidden = matrix;
+    $('difference-selection-note').textContent = `Showing all ${BELIEFS.length * (BELIEFS.length - 1) / 2} unique pairs per method (${methods().length} ${methods().length === 1 ? 'method' : 'separate methods'}), without significance filtering. ${matrix ? 'Select or keyboard-focus a cell for its full message names, effect, interval, adjusted p-value and task counts. Row A minus column B; ≤2 marks inconclusive cluster inference. Blank lower-triangle cells omit duplicates, not results.' : 'All intervals appear in message-name order, separated by method; unavailable estimates remain explicit.'}`;
+    if (matrix) {
+      $('difference-chart').innerHTML = '';
+      renderMatrices(rows);
+    } else {
+      $('difference-matrices').innerHTML = '';
+      const plotted = [...rows].sort((a, b) => a.method.localeCompare(b.method) || beliefLabel(a.belief_a).localeCompare(beliefLabel(b.belief_a)) || beliefLabel(a.belief_b).localeCompare(beliefLabel(b.belief_b)));
+      forest('difference-chart', plotted, row => `A: ${beliefLabel(row.belief_a)}\nB: ${beliefLabel(row.belief_b)} · ${row.method}${reversal(row) ? ' · reversal' : ''}`, `${selectionLabel()}: paired message-effect differences`, true);
+    }
     $('difference-table-heading').textContent = `All ${count(rows.length)} selected direct differences · including unsupported and unavailable results`;
     $('difference-table').innerHTML = table(['A − B / method', 'Direct difference', 'Pointwise 95% CI', 'Effect A · common items', 'Effect B · common items', 'Pairs', 'Clusters', 'Raw p', 'Holm p · 1,540', 'Opposite point signs?', 'Supported reversal?', 'Inference'], [...rows].sort((a, b) => a.method.localeCompare(b.method) || a.belief_a.localeCompare(b.belief_a) || a.belief_b.localeCompare(b.belief_b)).map(row => [
       `A: ${html(beliefLabel(row.belief_a))}<br>B: ${html(beliefLabel(row.belief_b))}<span class="subtext">${html(row.method)}</span>`, `<span class="number">${pp(row.estimate)}${star(row)}</span>`, ci(row.ci95), pp(row.effect_a), pp(row.effect_b), count(row.n_pairs), count(row.n_clusters), pvalue(row.p_value), pvalue(row.p_adjusted), finite(row.effect_a) && finite(row.effect_b) ? (row.opposite_signs ? 'Yes · descriptive only' : 'No') : 'unavailable', reversal(row) ? 'Yes · corrected criterion met' : 'No', uncertainty(row)
@@ -245,7 +325,7 @@
       const target = belief(setting?.belief)?.label;
       const references = [...new Set((setting?.reference_ids || []).map(id => belief(settings.get(id)?.belief)?.label).filter(Boolean))];
       const label = setting ? [target || (references.length ? `Reference for ${references.join('; ')}` : ''), setting.method, setting.control].filter(Boolean).join(' · ') : '';
-      return [`${html(label || 'Setting label unavailable')}`, current().benchmark === 'fortress' ? pp(row.mean) : percent(row.mean), `${count(row.n)} / ${count(row.planned)}`, ...['M1', 'M2', 'M3'].map(monitor => `${percent(row.monitors?.[monitor]?.rate)} · n=${count(row.monitors?.[monitor]?.n)}`)];
+      return [`${html(descriptiveText(label || 'Setting label unavailable'))}`, current().benchmark === 'fortress' ? pp(row.mean) : percent(row.mean), `${count(row.n)} / ${count(row.planned)}`, ...['M1', 'M2', 'M3'].map(monitor => `${percent(row.monitors?.[monitor]?.rate)} · n=${count(row.monitors?.[monitor]?.n)}`)];
     }), 'level-table', `${DATA.models[current().model]?.label} · ${benchmark()?.label} · all methods and controls · ${current().view} scoring`);
   }
 
@@ -254,8 +334,8 @@
     const available = rows.filter(row => finite(row.estimate)).length;
     const significant = rows.filter(corrected).length;
     $('answer-summary').innerHTML = [
-      [significant, 'Corrected belief effects', `${available}/${rows.length} selected estimates available; full 336-effect family.`],
-      [differences.significant.length, 'Direct belief differences', `Of ${differences.rows.length} selected comparisons; full 1,540-difference family.`],
+      [significant, 'Corrected message effects', `${available}/${rows.length} selected estimates available; full 336-effect family.`],
+      [differences.significant.length, 'Direct message differences', `Of ${differences.rows.length} selected comparisons; full 1,540-difference family.`],
       [differences.supported.length, 'Supported reversals', `${differences.opposite.length} raw opposite-sign comparisons. Signs alone are not enough.`]
     ].map(([value, label, detail]) => `<div class="summary-card"><strong>${count(value)}</strong><span>${html(label)}</span><p>${html(detail)}</p></div>`).join('');
   }
@@ -313,7 +393,14 @@
 
   function render() {
     const state = current();
-    $('selection-context').textContent = `${DATA.models[state.model]?.label || state.model} · ${benchmark()?.label || state.benchmark} · ${methods().join(' + ')} · ${state.view} scoring · matched neutral`;
+    $('selection-context').textContent = `${selectionLabel()} · matched neutral`;
+    document.querySelectorAll('[data-sync-filter]').forEach(select => { select.value = $(select.dataset.syncFilter).value; });
+    document.querySelectorAll('.benchmark-tabs [role="tab"]').forEach(tab => {
+      const active = tab.dataset.benchmark === state.benchmark;
+      tab.setAttribute('aria-selected', String(active));
+      tab.tabIndex = active ? 0 : -1;
+      if (active) $(tab.getAttribute('aria-controls')).setAttribute('aria-labelledby', tab.id);
+    });
     $('view-note').textContent = state.view === 'recovered'
       ? 'Recovered scoring view. This includes available recovered scores and monitor flags for eligible original actor outputs. It is not a new uniform-budget actor experiment. Compare original scoring to inspect sensitivity to scoring recovery; missing outcomes remain missing.'
       : 'Original scoring view. Recovered values are not substituted. Original-budget truncation and missing scores can change which task pairs enter each estimate; these results condition on the observed complete pairs.';
@@ -330,17 +417,48 @@
 
   $('model-filter').innerHTML = MODELS.map(id => `<option value="${html(id)}">${html(DATA.models[id].label)}</option>`).join('');
   $('benchmark-filter').innerHTML = BENCHMARKS.map(row => `<option value="${html(row.id)}">${html(row.label)}</option>`).join('');
-  $('benchmark-filter').value = BENCHMARKS.some(row => row.id === 'fortress') ? 'fortress' : BENCHMARKS[0]?.id;
+  $('benchmark-filter').value = BENCHMARKS[0]?.id || '';
+  document.querySelectorAll('[data-sync-filter]').forEach(select => {
+    select.innerHTML = $(select.dataset.syncFilter).innerHTML;
+    select.addEventListener('change', () => {
+      $(select.dataset.syncFilter).value = select.value;
+      render();
+    });
+  });
   ['model-filter', 'benchmark-filter', 'method-filter', 'view-filter'].forEach(id => $(id).addEventListener('change', render));
   $('monitor-filter').addEventListener('change', renderAssociations);
-  $('difference-limit').addEventListener('change', renderDifferences);
+  $('difference-view').addEventListener('change', renderDifferences);
+  const chooseBenchmark = id => {
+    $('benchmark-filter').value = id;
+    render();
+  };
+  ['effect-benchmark-tabs', 'difference-benchmark-tabs'].forEach(id => {
+    const panel = id === 'effect-benchmark-tabs' ? 'effect-chart' : 'difference-panel';
+    $(panel).setAttribute('role', 'tabpanel');
+    $(id).innerHTML = BENCHMARKS.map(bench => `<button type="button" role="tab" id="${id}-${html(bench.id)}" data-benchmark="${html(bench.id)}" aria-controls="${panel}" aria-selected="false" tabindex="-1">${html(bench.label)}</button>`).join('');
+    $(id).addEventListener('click', event => {
+      const tab = event.target.closest('[role="tab"]');
+      if (tab) chooseBenchmark(tab.dataset.benchmark);
+    });
+    $(id).addEventListener('keydown', event => {
+      const tabs = [...$(id).querySelectorAll('[role="tab"]')], position = tabs.indexOf(event.target);
+      if (position < 0 || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (position + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+      chooseBenchmark(tabs[next].dataset.benchmark);
+      tabs[next].focus({preventScroll: true});
+    });
+  });
   $('effect-heatmap').addEventListener('click', event => {
     const button = event.target.closest('button[data-benchmark]');
-    if (!button) return;
-    $('benchmark-filter').value = button.dataset.benchmark;
-    render();
-    $('benchmark-filter').focus({preventScroll: true});
+    if (button) chooseBenchmark(button.dataset.benchmark);
   });
+  const showPair = event => {
+    const button = event.target.closest('button[data-pair]');
+    if (button) selectMatrixCell(button);
+  };
+  $('difference-matrices').addEventListener('click', showPair);
+  $('difference-matrices').addEventListener('focusin', showPair);
   const showPoint = event => {
     const point = event.target.closest('.association-point');
     if (point) $(`scatter-detail-${point.dataset.panel}`).textContent = point.dataset.detail;

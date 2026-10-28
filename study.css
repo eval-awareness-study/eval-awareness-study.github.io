@@ -35,6 +35,7 @@ footer { border-top: 1px solid var(--line); margin-top: 48px; padding-top: 22px;
 .section-heading { display: flex; align-items: baseline; gap: 14px; margin-bottom: 24px; }
 .section-number { font: 12px ui-monospace, monospace; color: var(--teal); }
 .filters { display: grid; grid-template-columns: 1.1fr 1.65fr 1fr 1.2fr; gap: 14px; padding: 19px; border: 1px solid var(--line); background: var(--wash); border-radius: 5px; }
+.filters label { min-width: 0; }
 label { display: block; font-size: 12px; font-weight: 600; line-height: 1.4; }
 select { display: block; width: 100%; min-height: 42px; margin-top: 7px; border: 1px solid #bdc8c1; border-radius: 3px; padding: 9px 30px 9px 10px; font: 12px ui-sans-serif, system-ui, sans-serif; color: var(--ink); background-color: var(--paper); }
 button, select, summary { cursor: pointer; }
@@ -52,7 +53,7 @@ button, select, summary { cursor: pointer; }
 .summary-card p { font-size: 11px; line-height: 1.7; color: var(--muted); margin: 0; }
 .heatmap-key { display: flex; align-items: center; flex-wrap: wrap; gap: 9px 13px; font-size: 11px; color: var(--muted); margin: 15px 0; }
 .signed-ramp { display: inline-block; height: 12px; width: 145px; border: 1px solid #bfc9c6; background: linear-gradient(90deg, #bed0e0, #fffefa, #e7c9b1); }
-.table-scroll, .chart-scroll { max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-gutter: stable; }
+.table-scroll, .chart-scroll { width: 100%; min-width: 0; max-width: 100%; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-gutter: stable; }
 .table-scroll { margin: 12px 0 17px; }
 table { border-collapse: collapse; width: 100%; font-size: 12px; font-variant-numeric: tabular-nums; line-height: 1.6; text-align: left; }
 caption { text-align: left; font-weight: 600; color: var(--muted); padding: 0 0 10px; }
@@ -68,6 +69,26 @@ tbody th { font-weight: 600; }
 .heatmap th { padding: 9px; }
 .benchmark-button { width: 100%; border: 0; background: transparent; text-align: left; padding: 5px 2px; color: inherit; font: inherit; font-weight: 650; min-height: 44px; }
 .benchmark-button[aria-pressed="true"] { color: var(--teal); box-shadow: inset 0 -2px var(--teal); }
+.benchmark-tabs { display: flex; flex-wrap: wrap; gap: 7px; margin: 24px 0 12px; font: 12px/1.4 ui-sans-serif, system-ui, sans-serif; }
+.benchmark-tabs button { min-height: 44px; border: 1px solid #b9c8bf; border-radius: 4px; padding: 10px 14px; background: var(--paper); color: var(--ink); font: inherit; }
+.benchmark-tabs button[aria-selected="true"] { background: var(--teal); border-color: var(--teal); color: #fff; font-weight: 650; }
+.matrix-panel { min-width: 0; margin: 22px 0 30px; }
+.matrix-panel h4 { font: 600 15px/1.5 ui-sans-serif, system-ui, sans-serif; }
+.pair-matrix { min-width: 1060px; table-layout: fixed; }
+.pair-matrix th:first-child { width: 330px; }
+.pair-matrix th { position: relative; padding: 8px; vertical-align: middle; }
+.pair-matrix thead th:not(:first-child) { text-align: center; }
+.pair-matrix tbody th { font-size: 11px; line-height: 1.5; }
+.pair-matrix td { position: relative; padding: 3px; vertical-align: middle; border-color: #e8ece6; }
+.pair-matrix button { display: block; width: 100%; min-height: 44px; border: 1px solid #cdd7d0; border-radius: 3px; color: var(--ink); padding: 5px 2px; font: 11px/1.4 ui-sans-serif, system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+.pair-matrix button[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--teal); border-color: var(--teal); }
+.pair-matrix .pair-omitted { background: #f7f8f3; }
+.pair-index { color: var(--muted); font-weight: 400; }
+.pair-caution { display: block; font-size: 9px; }
+.pair-detail { padding: 17px; border: 1px solid var(--line); border-left: 3px solid var(--teal); background: var(--wash); font: 13px/1.8 ui-sans-serif, system-ui, sans-serif; overflow-wrap: anywhere; }
+.pair-detail h4 { margin-bottom: 12px; }
+.pair-detail p:last-child { margin: 0; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
 .effect-table { min-width: 1080px; }
 .difference-table { min-width: 1330px; }
 .coverage-table { min-width: 1040px; }
@@ -148,6 +169,8 @@ details p:last-child { margin-bottom: 0; }
   .section-nav { gap: 10px 15px; }
   .scatter-panel { padding: 11px; }
   .scatter-key { columns: 1; }
+  .pair-matrix { min-width: 910px; }
+  .pair-matrix th:first-child { width: 180px; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 @media print {
