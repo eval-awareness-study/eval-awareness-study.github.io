@@ -175,11 +175,45 @@
     $(id).innerHTML = `${svg}</svg>`;
   }
 
+  const takeawayBox = paragraphs => `<aside class="plot-takeaway"><strong>Takeaway</strong>${paragraphs.map(value => `<p>${html(value)}</p>`).join('')}</aside>`;
+
+  function effectTakeaway(rows, difference = false) {
+    const control = !difference && rows.some(row => row.reference === 'information');
+    return takeawayBox(MODELS.map(model => {
+      const own = rows.filter(row => row.model === model), known = own.filter(row => finite(row.estimate));
+      const supported = own.filter(corrected), prefix = `${modelLabel(model)}: `;
+      if (!known.length) return `${prefix}no usable estimates in this selection; no conclusion is available.`;
+      if (known.every(row => row.n_clusters <= 2)) return `${prefix}too few independent task clusters for reliable inference. Visible differences are descriptive, not established effects.`;
+      if (control) {
+        const neutral = own.find(row => row.reference === 'neutral'), information = own.find(row => row.reference === 'information');
+        const result = row => !row || !finite(row.estimate) ? 'unavailable' : `${pp(row.estimate)} (${significance(row).toLowerCase()})`;
+        return `${prefix}criterion message versus neutral: ${result(neutral)}; versus the same criterion information without the evaluation claim: ${result(information)}. ${corrected(information) ? 'The added evaluation claim has corrected evidence of an effect beyond that information control.' : 'An effect beyond the criterion information itself is not established; this does not prove the two conditions equivalent.'}`;
+      }
+      if (!supported.length) return `${prefix}none of ${own.length} ${difference ? 'direct message comparisons' : 'message-versus-neutral effects'} survives Holm correction. This is insufficient evidence, not proof that ${difference ? 'all messages act identically' : 'the messages have zero effect'}.${known.length < own.length ? ` ${own.length - known.length} estimates are unavailable.` : ''}`;
+      if (difference) {
+        const criterion = supported.filter(row => row.belief_a === 'G1' || row.belief_b === 'G1').length;
+        const reversals = own.filter(reversal).length;
+        return `${prefix}${supported.length}/${own.length} direct comparisons survive correction${criterion ? `; ${criterion} involve the concrete-scoring-criterion message` : ''}. ${reversals ? `${reversals} meet the supported opposite-direction reversal criterion.` : 'None establishes an opposite-direction reversal; the supported differences concern effect size, not established reversals.'}`;
+      }
+      const strongest = supported.reduce((a, b) => Math.abs(a.estimate) >= Math.abs(b.estimate) ? a : b);
+      return `${prefix}${supported.length}/${own.length} message effects survive correction. Largest supported absolute estimate: “${beliefLabel(strongest.belief)}”, ${pp(strongest.estimate)} in ${benchmark()?.metric || 'native score'} versus its matched neutral (Holm p ${pvalue(strongest.p_adjusted)}). This is a supplied-message effect, not proof of an adopted belief.`;
+    }));
+  }
+
+  function overviewTakeaway(rows, difference = false) {
+    const supported = rows.filter(corrected);
+    const names = BENCHMARKS.filter(bench => supported.some(row => row.benchmark === bench.id)).map(bench => bench.label);
+    return takeawayBox([
+      `${difference ? 'Direct message differences' : 'Message-versus-neutral effects'} survive correction in ${names.length ? names.join(' and ') : 'none of the benchmarks in this selection'}. This lists where evidence occurs; it is not an average across benchmarks or models.`,
+      'No corrected result does not mean no effect. In particular, the misalignment benchmark has only two independent scenario-family clusters, so its inference is inconclusive. Compare each benchmark in its own units.'
+    ]);
+  }
+
   function methodForests(id, rows, label, title, difference = false) {
     const selectedMethods = methods(), together = selectedMethods.length > 1;
     const container = $(id);
     container.classList.toggle('method-panels', together);
-    container.innerHTML = selectedMethods.map(method => `<article class="method-panel"><h4>${html(methodLabel(method))}</h4><div id="${id}-${method}" class="chart-scroll" tabindex="0" role="region" aria-label="${html(methodLabel(method))} · ${html(title)}"></div></article>`).join('');
+    container.innerHTML = selectedMethods.map(method => `<article class="method-panel"><h4>${html(methodLabel(method))}</h4>${effectTakeaway(rows.filter(row => row.method === method), difference)}<div id="${id}-${method}" class="chart-scroll" tabindex="0" role="region" aria-label="${html(methodLabel(method))} · ${html(title)}"></div></article>`).join('');
     const limit = extent(rows);
     selectedMethods.forEach(method => forest(`${id}-${method}`, rows.filter(row => row.method === method), label, `${methodLabel(method)}: ${title}`, difference, limit, together));
   }
@@ -195,6 +229,7 @@
     const rows = effects('neutral', true);
     const scale = Math.max(.01, ...rows.map(row => Math.abs(row.estimate)).filter(finite));
     $('heatmap-key').innerHTML = `<span>Blue ${signed(-scale)}</span><span class="signed-ramp" aria-hidden="true"></span><span>Orange ${signed(scale)}</span><span>Native 0–100 score points (FORTRESS: risk points; rates: pp). Scale shared by both models within this method / scoring view · white = zero · ★ corrected evidence · each cell stacks ${html(MODELS.map(model => `${modelLabel(model)} (${MODEL_STYLE[model].name} tint)`).join(' above '))}; read magnitude from the number</span>`;
+    $('heatmap-takeaway').innerHTML = overviewTakeaway(rows);
     const index = new Map(rows.map(row => [`${row.model}|${row.belief}|${row.method}|${row.benchmark}`, row]));
     $('effect-heatmap').innerHTML = `<table class="heatmap"><caption>${html(MODELS.map(modelLabel).join(' and '))} · matched neutral · ${html(current().view)} scoring</caption><thead><tr><th scope="col">Belief target / method</th>${BENCHMARKS.map(bench => `<th scope="col"><button class="benchmark-button" type="button" data-benchmark="${html(bench.id)}" aria-pressed="${bench.id === current().benchmark}">${html(bench.label)}<span class="subtext">${html(bench.metric)}</span></button></th>`).join('')}</tr></thead><tbody>${BELIEFS.map(target => methods().map(method => `<tr><th scope="row">${html(target.label)}<span class="subtext">${html(method)}</span></th>${BENCHMARKS.map(bench => `<td>${MODELS.map(model => {
       const row = index.get(`${model}|${target.id}|${method}|${bench.id}`);
@@ -282,6 +317,7 @@
     $('difference-metric-context').textContent = nativeContext(benchmark());
     $('difference-overview-note').textContent = `${state.view === 'recovered' ? 'Recovered' : 'Original'} scoring. Each cell shows corrected direct differences / estimable comparisons (55 planned). This overview ignores the benchmark and method filters. Holm correction still covers all 1,540 planned comparisons in this scoring view. Zero means no corrected evidence, not proof of equal effects.`;
     const overview = view()?.differences || [];
+    $('difference-overview-takeaway').innerHTML = overviewTakeaway(overview, true);
     $('difference-overview').innerHTML = table(['Benchmark', ...MODELS.flatMap(model => METHODS.map(method => `${DATA.models[model]?.label || model} · ${method}`))], BENCHMARKS.map(bench => [
       html(bench.label),
       ...MODELS.flatMap(model => METHODS.map(method => {
@@ -293,6 +329,7 @@
       }))
     ]), '', 'Counts of corrected differences between supplied conditions—not correlations or proof of adopted beliefs.');
     const rows = selected(view()?.differences);
+    $('difference-takeaway').innerHTML = methods().map(method => `<article><h4>${html(methodLabel(method))}</h4>${effectTakeaway(rows.filter(row => row.method === method), true)}</article>`).join('');
     const significant = rows.filter(corrected);
     const opposite = rows.filter(row => row.opposite_signs === true);
     const supported = rows.filter(reversal);
@@ -306,6 +343,7 @@
       return `${modelLabel(model)}: ${count(own.length)} selected comparisons, ${count(estimable)} with an estimate; ${count(ownSignificant.length)} with Holm-adjusted evidence of a direct difference (${count(g1Count)} involve the concrete-scoring-criterion condition); ${count(ownOpposite)} with opposite point-estimate signs; ${count(ownSupported)} supported reversals (${count(ownOpposite - ownSupported)} opposite-sign comparisons do not meet the criterion); ${count(own.length - estimable)} estimates unavailable.`;
     }).join(' ')} Counts apply only to the detailed selection above.`;
     const matrix = $('difference-view').value === 'matrix';
+    $('difference-takeaway').hidden = !matrix;
     $('difference-matrices').hidden = !matrix;
     $('difference-chart').hidden = matrix;
     $('difference-selection-note').textContent = `Showing all ${BELIEFS.length * (BELIEFS.length - 1) / 2} unique pairs per method (${methods().length} ${methods().length === 1 ? 'method' : 'separate methods'}), without significance filtering. ${matrix ? 'Select or keyboard-focus a cell for its full message names, effect, interval, adjusted p-value and task counts. Row A minus column B; ≤2 marks inconclusive cluster inference. Blank lower-triangle cells omit duplicates, not results.' : 'All intervals appear in message-name order, separated by method; unavailable estimates remain explicit.'}`;
@@ -385,8 +423,15 @@
       kx += 45 + caption.length * 6.4;
     });
     svg += '</svg>';
+    const takeaway = takeawayBox(sets.map(({row}) => {
+      const candidates = (DATA.association_inference?.associations || []).filter(item => item.model === row.model && item.benchmark === row.benchmark && item.method === row.method && item.monitor === row.monitor && item.view === current().view);
+      const full = candidates.find(item => item.sensitivity === 'full'), without = candidates.find(item => item.sensitivity === 'without_G1');
+      if (!full || !finite(full.p_adjusted) || !finite(full.r) || full.n_clusters <= 2) return `${modelLabel(row.model)}: association inference is unavailable or inconclusive for this selection; the point pattern alone does not establish a relationship.`;
+      if (full.p_adjusted > .05) return `${modelLabel(row.model)}: the monitor–behavior association does not survive correction (r ${correlation(full.r)}, Holm p ${pvalue(full.p_adjusted)}). A visible slope is not reliable evidence here; this does not establish no association.`;
+      return `${modelLabel(row.model)}: a ${full.r < 0 ? 'negative' : 'positive'} association survives correction (r ${correlation(full.r)}, Holm p ${pvalue(full.p_adjusted)}): conditions with larger monitor increases tend to have ${full.r < 0 ? 'lower' : 'higher'} ${benchmark()?.metric || 'native scores'}. ${!without || !finite(without.p_adjusted) || without.n_clusters <= 2 ? 'The without-criterion sensitivity is unavailable.' : without.p_adjusted <= .05 ? 'It also survives removing the concrete-scoring-criterion condition.' : 'It does not survive removing the concrete-scoring-criterion condition; broader robustness is not established.'} Association is not evidence that awareness caused the behavior.`;
+    }));
     const summary = sets.map(({row}) => `${html(modelShort(row.model))} r = ${correlation(row.r)} · ${count(row.n_conditions)} conditions`).join('<br>');
-    return `<article class="scatter-panel"><h4>${html(method)} · ${html(monitor)}</h4><p class="association-summary">Observed profile<br>${summary}</p>${sets.map(({row}) => associationInference(row)).join('')}${all.length ? `${svg}<ol class="scatter-key">${order.map(id => `<li>${html(beliefLabel(id))}</li>`).join('')}</ol>` : '<p class="empty">No paired monitor-and-score points available.</p>'}<p id="scatter-detail-${index}" class="scatter-detail" aria-live="polite">Point numbers map to the condition names above and are shared by both models. Focus or select a point for exact paired values. Coincident points are grouped within a model; no jitter is added. Axes scale independently per panel.</p></article>`;
+    return `<article class="scatter-panel"><h4>${html(method)} · ${html(monitor)}</h4>${takeaway}<p class="association-summary">Observed profile<br>${summary}</p>${sets.map(({row}) => associationInference(row)).join('')}${all.length ? `${svg}<ol class="scatter-key">${order.map(id => `<li>${html(beliefLabel(id))}</li>`).join('')}</ol>` : '<p class="empty">No paired monitor-and-score points available.</p>'}<p id="scatter-detail-${index}" class="scatter-detail" aria-live="polite">Point numbers map to the condition names above and are shared by both models. Focus or select a point for exact paired values. Coincident points are grouped within a model; no jitter is added. Axes scale independently per panel.</p></article>`;
   }
 
   function renderAssociations() {
@@ -464,6 +509,7 @@
     $('p3-snapshot').textContent = snapshot
       ? `Saved P3 snapshot: ${snapshot.built_at || 'timestamp unavailable'}. Not live; no automatic refresh.`
       : 'P3 aggregate snapshot unavailable. Missing progress and contrasts are not zero.';
+    $('p3-takeaway').innerHTML = takeawayBox([snapshot ? `This saved snapshot has ${count(snapshot.counts?.complete)} complete score-plus-monitor measurements out of ${count(snapshot.counts?.eligible)} eligible assignments. It is incomplete and descriptive: no reliable P3-versus-P1/P2 conclusion or significance claim follows from these rows yet.` : 'No P3 snapshot is available, so no P3 conclusion is supported.', 'P3 will enter the side-by-side comparison only after generation and monitor measurements finish for Qwen, Gemma, OLMo and R1-Distill-Llama. Missing or withheld outcomes are not zero effects.']);
     $('p3-selection').textContent = `${MODELS.map(modelLabel).join(' and ')} · ${benchmark()?.label || state.benchmark} · P3 recorded-only outcomes. P1/P2 delivery-method, scoring-view and monitor filters do not apply. ${nativeContext(benchmark())}`;
     const metrics = [['planned', 'Planned'], ['eligible', 'Eligible'], ['generated', 'Generated'], ['scored', 'Scored'], ['complete', 'Complete'], ['withheld', 'Held / withheld']];
     $('p3-counts').innerHTML = metrics.map(([key, label]) => `<div class="summary-card"><strong>${count(snapshot?.counts?.[key])}</strong><span>${label}</span></div>`).join('');
@@ -498,6 +544,7 @@
       ? 'Recovered scoring view. This includes available recovered scores and monitor flags for eligible original actor outputs. It is not a new uniform-budget actor experiment. Compare original scoring to inspect sensitivity to scoring recovery; missing outcomes remain missing.'
       : 'Original scoring view. Recovered values are not substituted. Original-budget truncation and missing scores can change which task pairs enter each estimate; these results condition on the observed complete pairs.';
     if (!view()) $('view-note').textContent += ' No statistics are available for this view.';
+    $('study-takeaway').innerHTML = overviewTakeaway((view()?.effects || []).filter(row => row.reference === 'neutral'));
     renderHeatmap();
     renderEffects();
     const differences = renderDifferences();

@@ -77,6 +77,12 @@ tbody th { font-weight: 600; }
 .method-panel { min-width: 0; }
 .method-panel h4 { font: 600 15px/1.5 ui-sans-serif, system-ui, sans-serif; }
 .method-panels .chart-scroll svg { min-width: 720px; max-width: none; }
+.method-panels > .method-panel { display: grid; grid-template-rows: subgrid; grid-row: span 3; row-gap: 12px; }
+.plot-takeaway { border-left: 3px solid var(--teal); background: var(--wash); padding: 13px 16px; margin: 0 0 18px; font: 13px/1.65 ui-sans-serif, system-ui, sans-serif; overflow-wrap: anywhere; }
+.plot-takeaway > strong { color: var(--teal); }
+.plot-takeaway p { margin: 8px 0 0; }
+.method-takeaways { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.method-takeaways > :only-child { grid-column: 1 / -1; }
 #difference-matrices > :only-child { grid-column: 1 / -1; }
 #difference-matrices .pair-matrix { min-width: 740px; }
 #difference-matrices .pair-matrix th:first-child { width: 215px; }
@@ -160,6 +166,7 @@ details p:last-child { margin-bottom: 0; }
 [hidden] { display: none !important; }
 @media (max-width: 1000px) {
   .method-panels, #difference-matrices { grid-template-columns: minmax(0, 1fr); }
+  .method-takeaways { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 800px) {
   main { padding: 34px 20px 20px; }
