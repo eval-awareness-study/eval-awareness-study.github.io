@@ -161,7 +161,7 @@
       state.benchmark = index.benchmarks[0].id;
       state.belief = index.targets[0].id;
       field("benchmark", "Benchmark", index.benchmarks);
-      field("method", "Delivery method", index.methods);
+      field("method", "Delivery method", index.methods.filter(row => row.id !== "P3"));
       const names = window.STUDY_TARGET_NAMES || {};
       field("belief", "Belief", index.targets.map(row => ({ ...row, label: names[row.id] || row.label })));
       field("task", "Task", []);

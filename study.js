@@ -531,7 +531,7 @@
       const completion = value => typeof value === 'boolean' ? (value ? 'Yes' : 'No') : count(value);
       return [html(DATA.models[id].label), ...['planned', 'generated', 'held', 'actor_valid', 'truncated', 'original_scored', 'scored'].map(key => count(row[key])), completion(row.original_complete), completion(row.complete), ...['M1_known', 'M2_known', 'M3_known'].map(key => `${count(row[`original_${key}`])} / ${count(row[key])}`)];
     }), 'coverage-table', 'Complete = score and all three monitor flags known.');
-    const exports = [['pooled', 'Pooled effects · CSV'], ['pooled_json', 'Pooled effects · JSON'], ['json', 'All data · JSON'], ['effects', 'Per-method effects · CSV'], ['differences', 'Differences · CSV'], ['associations', 'Associations · CSV'], ['association_inference', 'Association tests · JSON'], ['p3', 'P3 snapshot · JSON']];
+    const exports = [['pooled', 'Pooled effects · CSV'], ['pooled_json', 'Pooled effects · JSON'], ['json', 'All data · JSON'], ['effects', 'Per-method effects · CSV'], ['differences', 'Differences · CSV'], ['associations', 'Associations · CSV'], ['association_inference', 'Association tests · JSON']];
     $('export-links').innerHTML = exports.map(([key, label]) => {
       const path = DATA.exports?.[key];
       // Download links must remain local aggregate artifacts, never script URLs.
@@ -540,27 +540,6 @@
     $('metric-guide').innerHTML = table(['Benchmark', 'Type', 'Metric', 'Better'], BENCHMARKS.map(row => [html(row.label), html(row.category === 'Agentic capability' ? 'Agentic benign-task control' : row.category || ''), html(row.metric), html(row.direction === 'higher' ? 'Higher' : row.direction === 'lower' ? 'Lower' : direction(row))]), 'guide-table');
   }
 
-  function renderP3() {
-    const snapshot = DATA.p3;
-    const state = {benchmark: $('p3-benchmark-filter').value};
-    const bench = BENCHMARKS.find(row => row.id === state.benchmark);
-    $('p3-takeaway').innerHTML = takeawayBox([snapshot ? `${count(snapshot.counts?.complete)} of ${count(snapshot.counts?.eligible)} eligible assignments complete.` : 'No P3 snapshot available.']);
-    $('p3-selection').textContent = nativeContext(bench);
-    const metrics = [['planned', 'Planned'], ['eligible', 'Eligible'], ['generated', 'Generated'], ['scored', 'Scored'], ['complete', 'Complete'], ['withheld', 'Held / withheld']];
-    $('p3-counts').innerHTML = metrics.map(([key, label]) => `<div class="summary-card"><strong>${count(snapshot?.counts?.[key])}</strong><span>${label}</span></div>`).join('');
-    $('p3-coverage').innerHTML = table(['Model', ...metrics.map(([, label]) => label), 'Awaiting generation', 'Awaiting measurement', 'Grading budget held'], Object.entries(snapshot?.coverage || {}).map(([model, row]) => [
-      html(DATA.models[model]?.label || model), ...metrics.map(([key]) => count(row[key])), count(row.awaiting_generation), count(row.awaiting_measurement), count(row.grading_budget_held)
-    ]), 'coverage-table');
-    const beliefRank = id => { const rank = BELIEFS.findIndex(target => target.id === id); return rank < 0 ? BELIEFS.length : rank; };
-    const rows = (snapshot?.contrasts || []).filter(row => MODELS.includes(row.model) && row.benchmark === state.benchmark).sort((a, b) => beliefRank(a.belief) - beliefRank(b.belief) || modelOrder(a, b));
-    $('p3-contrasts').innerHTML = table(['Belief', 'Model', 'Δ', 'Scored / eligible / planned pairs', 'Clusters', ...['M1', 'M2', 'M3'].map(monitor => `${monitor}: monitor Δ / behavior Δ / pairs`)], rows.map(row => [
-      html(beliefLabel(row.belief)), html(modelLabel(row.model)), pp(row.estimate, state.benchmark), `${count(row.n_pairs)} / ${count(row.n_eligible_pairs)} / ${count(row.n_planned_pairs)}`, count(row.n_clusters),
-      ...['M1', 'M2', 'M3'].map(monitor => {
-        const observation = row.monitors?.[monitor];
-        return `${pp(observation?.estimate, 'monitor')} / ${pp(observation?.behavior_estimate, state.benchmark)} / ${count(observation?.n_pairs)}`;
-      })
-    ]), 'p3-contrast-table');
-  }
 
   function render() {
     const state = current();
@@ -583,12 +562,9 @@
 
   $('benchmark-filter').innerHTML = BENCHMARK_GROUPS.map(group => `<optgroup label="${html(group.label)}">${group.benchmarks.map(bench => `<option value="${html(bench.id)}">${html(bench.label)}</option>`).join('')}</optgroup>`).join('');
   $('benchmark-filter').value = BENCHMARKS[0]?.id || '';
-  ['pooled-benchmark-filter', 'p3-benchmark-filter'].forEach(id => {
-    $(id).innerHTML = $('benchmark-filter').innerHTML;
-    $(id).value = BENCHMARKS[0]?.id || '';
-  });
+  $('pooled-benchmark-filter').innerHTML = $('benchmark-filter').innerHTML;
+  $('pooled-benchmark-filter').value = BENCHMARKS[0]?.id || '';
   ['pooled-benchmark-filter', 'pooled-view-filter'].forEach(id => $(id).addEventListener('change', renderPooled));
-  $('p3-benchmark-filter').addEventListener('change', renderP3);
   document.querySelectorAll('[data-sync-filter]').forEach(select => {
     select.innerHTML = $(select.dataset.syncFilter).innerHTML;
     select.addEventListener('change', () => {
@@ -641,7 +617,6 @@
   renderStatic();
   render();
   renderPooled();
-  renderP3();
   const revealSection = () => {
     const id = location.hash.slice(1);
     const target = $(id);
