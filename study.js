@@ -12,7 +12,13 @@
   const modelShort = id => modelLabel(id).match(/^[A-Za-z]+/)?.[0] || modelLabel(id);
   const modelOrder = (a, b) => MODELS.indexOf(a.model) - MODELS.indexOf(b.model);
   const modelLegendText = () => MODELS.map(id => `${modelLabel(id)} ${MODEL_STYLE[id].name}`).join(' · ');
-  const BENCHMARKS = DATA.benchmarks || [];
+  const BENCHMARK_GROUPS = ['Chat capability', 'Chat safety', 'Agentic capability', 'Agentic safety']
+    .map(category => ({
+      label: category.replace(' ', ' · '),
+      kind: category.endsWith('capability') ? 'capability' : 'safety',
+      benchmarks: (DATA.benchmarks || []).filter(bench => bench.category === category),
+    })).filter(group => group.benchmarks.length);
+  const BENCHMARKS = BENCHMARK_GROUPS.flatMap(group => group.benchmarks);
   const TARGET_NAMES = {
     E0: 'Evaluation exists',
     E1: 'Harm prevention is assessed',
@@ -231,7 +237,9 @@
     $('heatmap-key').innerHTML = `<span>Blue ${signed(-scale)}</span><span class="signed-ramp" aria-hidden="true"></span><span>Orange ${signed(scale)}</span><span>Native 0–100 score points (FORTRESS: risk points; rates: pp). Scale shared by both models within this method / scoring view · white = zero · ★ corrected evidence · each cell stacks ${html(MODELS.map(model => `${modelLabel(model)} (${MODEL_STYLE[model].name} tint)`).join(' above '))}; read magnitude from the number</span>`;
     $('heatmap-takeaway').innerHTML = overviewTakeaway(rows);
     const index = new Map(rows.map(row => [`${row.model}|${row.belief}|${row.method}|${row.benchmark}`, row]));
-    $('effect-heatmap').innerHTML = `<table class="heatmap"><caption>${html(MODELS.map(modelLabel).join(' and '))} · matched neutral · ${html(current().view)} scoring</caption><thead><tr><th scope="col">Belief target / method</th>${BENCHMARKS.map(bench => `<th scope="col"><button class="benchmark-button" type="button" data-benchmark="${html(bench.id)}" aria-pressed="${bench.id === current().benchmark}">${html(bench.label)}<span class="subtext">${html(bench.metric)}</span></button></th>`).join('')}</tr></thead><tbody>${BELIEFS.map(target => methods().map(method => `<tr><th scope="row">${html(target.label)}<span class="subtext">${html(method)}</span></th>${BENCHMARKS.map(bench => `<td>${MODELS.map(model => {
+    const groupHeaders = BENCHMARK_GROUPS.map(group => `<th scope="colgroup" colspan="${group.benchmarks.length}" class="benchmark-group-heading benchmark-${group.kind}">${html(group.label)}</th>`).join('');
+    const benchmarkHeaders = BENCHMARK_GROUPS.map(group => group.benchmarks.map(bench => `<th scope="col"><button class="benchmark-button benchmark-${group.kind}" type="button" data-benchmark="${html(bench.id)}" aria-label="${html(bench.label)} — ${html(group.label)}" aria-pressed="${bench.id === current().benchmark}">${html(bench.label)}<span class="subtext">${html(bench.metric)}</span></button></th>`).join('')).join('');
+    $('effect-heatmap').innerHTML = `<table class="heatmap"><caption>${html(MODELS.map(modelLabel).join(' and '))} · matched neutral · ${html(current().view)} scoring</caption><thead><tr><th scope="col" rowspan="2">Belief target / method</th>${groupHeaders}</tr><tr>${benchmarkHeaders}</tr></thead><tbody>${BELIEFS.map(target => methods().map(method => `<tr><th scope="row">${html(target.label)}<span class="subtext">${html(method)}</span></th>${BENCHMARKS.map(bench => `<td>${MODELS.map(model => {
       const row = index.get(`${model}|${target.id}|${method}|${bench.id}`);
       const detail = `${modelLabel(model)}, ${target.label}, ${method}, ${bench.label}: ${pp(row?.estimate, bench.id)}; CI ${ci(row?.ci95, bench.id)}; Holm p ${pvalue(row?.p_adjusted)}; ${count(row?.n_pairs)} of ${count(row?.n_assigned)} paired items; ${count(row?.n_clusters)} clusters`;
       return modelCell(model, row?.estimate, scale, `${html(modelShort(model))} ${finite(row?.estimate) ? `${signed(row.estimate)}${star(row)}` : 'unavailable'}<span class="subtext">n=${count(row?.n_pairs)}/${count(row?.n_assigned)}${row?.n_clusters <= 2 ? ' · 2-cluster caution' : ''}</span>`, detail);
@@ -555,7 +563,7 @@
     renderP3();
   }
 
-  $('benchmark-filter').innerHTML = BENCHMARKS.map(row => `<option value="${html(row.id)}">${html(row.label)}</option>`).join('');
+  $('benchmark-filter').innerHTML = BENCHMARK_GROUPS.map(group => `<optgroup label="${html(group.label)}">${group.benchmarks.map(bench => `<option value="${html(bench.id)}">${html(bench.label)}</option>`).join('')}</optgroup>`).join('');
   $('benchmark-filter').value = BENCHMARKS[0]?.id || '';
   document.querySelectorAll('[data-sync-filter]').forEach(select => {
     select.innerHTML = $(select.dataset.syncFilter).innerHTML;
@@ -574,7 +582,7 @@
   ['effect-benchmark-tabs', 'difference-benchmark-tabs'].forEach(id => {
     const panel = id === 'effect-benchmark-tabs' ? 'effect-chart' : 'difference-panel';
     $(panel).setAttribute('role', 'tabpanel');
-    $(id).innerHTML = BENCHMARKS.map(bench => `<button type="button" role="tab" id="${id}-${html(bench.id)}" data-benchmark="${html(bench.id)}" aria-controls="${panel}" aria-selected="false" tabindex="-1">${html(bench.label)}</button>`).join('');
+    $(id).innerHTML = BENCHMARK_GROUPS.map(group => `<div class="benchmark-tab-group benchmark-${group.kind}" role="presentation"><span class="benchmark-group-label" aria-hidden="true">${html(group.label)}</span><div class="benchmark-group-tabs" role="presentation">${group.benchmarks.map(bench => `<button type="button" role="tab" id="${id}-${html(bench.id)}" data-benchmark="${html(bench.id)}" aria-label="${html(bench.label)} — ${html(group.label)}" aria-controls="${panel}" aria-selected="false" tabindex="-1">${html(bench.label)}</button>`).join('')}</div></div>`).join('');
     $(id).addEventListener('click', event => {
       const tab = event.target.closest('[role="tab"]');
       if (tab) chooseBenchmark(tab.dataset.benchmark);

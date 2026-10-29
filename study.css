@@ -63,15 +63,22 @@ tbody th { font-weight: 600; }
 .number { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .subtext { display: block; font-size: 10px; font-weight: 400; color: var(--muted); line-height: 1.7; }
 .heatmap { min-width: 1000px; table-layout: fixed; }
-.heatmap th:first-child { width: 210px; }
+.heatmap th[rowspan], .heatmap tbody th { width: 210px; }
 .heatmap td { text-align: center; vertical-align: middle; font-size: 13px; padding: 4px; }
 .heatmap td .subtext { font-size: 9px; }
 .heatmap th { padding: 9px; }
-.benchmark-button { width: 100%; border: 0; background: transparent; text-align: left; padding: 5px 2px; color: inherit; font: inherit; font-weight: 650; min-height: 44px; }
-.benchmark-button[aria-pressed="true"] { color: var(--teal); box-shadow: inset 0 -2px var(--teal); }
-.benchmark-tabs { display: flex; flex-wrap: wrap; gap: 7px; margin: 24px 0 12px; font: 12px/1.4 ui-sans-serif, system-ui, sans-serif; }
-.benchmark-tabs button { min-height: 44px; border: 1px solid #b9c8bf; border-radius: 4px; padding: 10px 14px; background: var(--paper); color: var(--ink); font: inherit; }
-.benchmark-tabs button[aria-selected="true"] { background: var(--teal); border-color: var(--teal); color: #fff; font-weight: 650; }
+.benchmark-capability { --benchmark-color: #285fa0; --benchmark-wash: #edf3fc; }
+.benchmark-safety { --benchmark-color: #75468f; --benchmark-wash: #f5eef9; }
+.heatmap .benchmark-group-heading { color: var(--benchmark-color); background: var(--benchmark-wash); border-top: 3px solid var(--benchmark-color); }
+.benchmark-button { width: 100%; border: 1px solid var(--benchmark-color); border-radius: 5px; background: var(--benchmark-wash); text-align: left; padding: 8px; color: var(--benchmark-color); font: inherit; font-weight: 650; min-height: 44px; }
+.benchmark-button[aria-pressed="true"] { color: #fff; background: var(--benchmark-color); }
+.benchmark-button[aria-pressed="true"] .subtext { color: inherit; }
+.benchmark-tabs { display: flex; flex-wrap: wrap; gap: 12px; margin: 24px 0 12px; font: 12px/1.4 ui-sans-serif, system-ui, sans-serif; }
+.benchmark-tab-group { flex: 1 1 240px; min-width: 0; padding: 10px; border: 1px solid var(--line); border-top: 3px solid var(--benchmark-color); border-radius: 5px; background: var(--benchmark-wash); }
+.benchmark-group-label { display: block; margin-bottom: 8px; color: var(--benchmark-color); font-weight: 650; }
+.benchmark-group-tabs { display: flex; flex-wrap: wrap; gap: 7px; }
+.benchmark-tabs button { min-height: 44px; border: 1px solid var(--benchmark-color); border-radius: 4px; padding: 10px 12px; background: var(--paper); color: var(--benchmark-color); font: inherit; }
+.benchmark-tabs button[aria-selected="true"] { background: var(--benchmark-color); color: #fff; font-weight: 650; }
 .matrix-panel { min-width: 0; margin: 22px 0 30px; }
 .method-panels, #difference-matrices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; align-items: start; overflow: visible; }
 .method-panel { min-width: 0; }
