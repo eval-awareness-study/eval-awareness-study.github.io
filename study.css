@@ -46,6 +46,10 @@ button, select, summary { cursor: pointer; }
 .note { font-size: 13px; line-height: 1.8; padding: 15px 18px; border-left: 3px solid #8ca9a0; background: #f0f5ef; margin: 18px 0; }
 .warning { border-color: #ad7436; background: #fbf3e8; }
 .metric-context { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+.setup-summary { font-size: 14px; line-height: 1.8; padding: 4px 20px 12px; border: 1px solid var(--line); border-radius: 5px; background: var(--paper); margin: 20px 0; }
+.pooling-equation { font: 13px/1.9 ui-monospace, SFMono-Regular, Menlo, monospace; padding: 10px 14px; background: #f0f5ef; overflow-x: auto; }
+.secondary-analyses { margin-top: 40px; }
+.secondary-analyses > summary { font-size: 16px; }
 .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; margin: 23px 0; }
 .summary-card { padding: 16px 18px; background: var(--paper); border: 1px solid var(--line); border-radius: 4px; }
 .summary-card strong { display: block; font-size: 29px; line-height: 1.4; font-weight: 500; letter-spacing: -.03em; }
