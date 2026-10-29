@@ -32,6 +32,7 @@
     T2: 'Behavior can influence future learning',
     D1: 'Greater demonstrated capability can restrict deployment'
   };
+  window.STUDY_TARGET_NAMES = TARGET_NAMES;
   const BELIEFS = (DATA.beliefs || []).map(row => ({...row, label: TARGET_NAMES[row.id] || row.label}));
   const descriptiveText = value => String(value ?? '').replace(/(^|[^A-Za-z0-9])(E[0-4]|G1|O1|W1|T[12]|D1)(?![A-Za-z0-9])/g, (_, prefix, id) => `${prefix}${TARGET_NAMES[id]}`);
   const METHODS = ['P1', 'P2'];
@@ -45,7 +46,6 @@
   const validCI = value => Array.isArray(value) && value.length === 2 && value.every(finite);
   const ci = (value, id = current().benchmark) => validCI(value) ? `[${signed(value[0])}, ${signed(value[1])}] ${scoreUnit(id)}` : 'unavailable';
   const pvalue = value => finite(value) ? (value === 0 ? '0' : value < .0001 ? value.toExponential(2) : value.toFixed(4)) : 'unavailable';
-  const money = value => finite(value) ? `$${value.toFixed(2)}` : 'unknown';
   const belief = id => BELIEFS.find(row => row.id === id);
   const beliefLabel = id => belief(id)?.label || 'Label unavailable';
   const current = () => ({benchmark: $('benchmark-filter').value, method: $('method-filter').value, view: $('view-filter').value, monitor: $('monitor-filter').value});
@@ -53,28 +53,27 @@
   const view = () => DATA.statistics?.views?.[current().view];
   const selected = (rows, allBenchmarks = false) => (rows || []).filter(row => MODELS.includes(row.model) && (allBenchmarks || row.benchmark === current().benchmark) && methods().includes(row.method));
   const effects = (reference = 'neutral', allBenchmarks = false) => selected(view()?.effects, allBenchmarks).filter(row => row.reference === reference);
-  const corrected = row => finite(row?.estimate) && finite(row?.p_adjusted) && row.p_adjusted <= .05 && row.n_clusters > 2;
-  const reversal = row => row?.robust_reversal === true && row.n_clusters > 2;
-  const star = row => corrected(row) ? ' ★' : '';
-  const significance = row => !finite(row?.estimate) ? 'Unavailable' : row.n_clusters <= 2 ? 'Inconclusive' : !finite(row.p_adjusted) ? 'Unavailable' : corrected(row) ? 'Significant' : 'Not significant';
-  const pooledSignificant = row => finite(row?.estimate) && finite(row?.p_value) && row.p_value < .05 && row.n_clusters > 2;
-  const pooledSignificance = row => !finite(row?.estimate) ? 'Unavailable' : row.n_clusters <= 2 ? 'Inconclusive' : !finite(row.p_value) ? 'Unavailable' : pooledSignificant(row) ? 'Raw significant' : 'Not significant';
+  // Two-sided p < .05 with more than two independent clusters; no multiple-testing correction.
+  const isSignificant = row => finite(row?.estimate) && finite(row?.p_value) && row.p_value < .05 && row.n_clusters > 2;
+  const significance = row => !finite(row?.estimate) ? 'Unavailable' : row.n_clusters <= 2 ? 'Inconclusive' : !finite(row.p_value) ? 'Unavailable' : isSignificant(row) ? 'Significant' : 'Not significant';
+  const neutralEffect = (row, id) => (view()?.effects || []).find(item => item.reference === 'neutral' && item.model === row.model && item.benchmark === row.benchmark && item.method === row.method && item.belief === id);
+  // Reversal: both beliefs' effects are significant with opposite signs, and their direct difference is significant.
+  const reversal = row => {
+    if (!isSignificant(row) || row.opposite_signs !== true) return false;
+    const a = neutralEffect(row, row.belief_a), b = neutralEffect(row, row.belief_b);
+    return isSignificant(a) && isSignificant(b) && a.estimate * b.estimate < 0;
+  };
+  const star = row => isSignificant(row) ? ' ★' : '';
   const benchmark = () => BENCHMARKS.find(row => row.id === current().benchmark);
-  const direction = row => row?.direction === 'higher' ? 'Higher is better on this metric' : row?.direction === 'lower' ? 'Lower is better on this metric' : (row?.direction || 'Preferred direction unspecified');
-  const methodLabel = id => ({P1: 'P1 · contextual documents', P2: 'P2 · explicit system notice'}[id] || id);
-  const selectionLabel = () => `${MODELS.map(modelLabel).join(' and ')} · ${benchmark()?.label || 'Selected benchmark'} · ${methods().map(methodLabel).join(' / ')} · ${current().view} scoring`;
-  const nativeContext = row => `${row?.metric || 'Metric unavailable'} · ${direction(row)}. Positive Δ means more of the measured outcome; this is not a universal safety scale.${row?.id === 'fortress' ? ' Units are risk points on the rescaled 0–100 FORTRESS score, not harmful-response percentages. Higher means more risk; lower means less risk.' : ''}`;
+  const direction = row => row?.direction === 'higher' ? 'higher is better' : row?.direction === 'lower' ? 'lower is better' : (row?.direction || '');
+  const methodLabel = id => ({P1: 'P1 · context documents', P2: 'P2 · system notice'}[id] || id);
+  const selectionLabel = () => `${benchmark()?.label || 'Selected benchmark'} · ${methods().map(methodLabel).join(' / ')} · ${current().view} scoring`;
+  const nativeContext = row => `${row?.metric || 'Metric unavailable'}${direction(row) ? ` · ${direction(row)}` : ''}.${row?.id === 'fortress' ? ' Risk points on a 0–100 scale; higher = more risk.' : ''}`;
 
   function table(headers, rows, className = '', caption = '') {
     return `<table class="${className}">${caption ? `<caption>${html(caption)}</caption>` : ''}<thead><tr>${headers.map(label => `<th scope="col">${html(label)}</th>`).join('')}</tr></thead><tbody>${rows.length ? rows.map(cells => `<tr>${cells.map((cell, index) => `<${index ? 'td' : 'th scope="row"'}>${cell}</${index ? 'td' : 'th'}>`).join('')}</tr>`).join('') : `<tr><td colspan="${headers.length}" class="unknown">No data available for this selection.</td></tr>`}</tbody></table>`;
   }
 
-  function metadata(value) {
-    if (value === null || value === undefined) return '<span class="unknown">unavailable</span>';
-    if (Array.isArray(value)) return value.length ? `<ul>${value.map(item => `<li>${metadata(item)}</li>`).join('')}</ul>` : 'None recorded';
-    if (typeof value === 'object') return `<dl class="metadata">${Object.entries(value).map(([key, item]) => `<dt>${html(descriptiveText(key).replaceAll('_', ' '))}</dt><dd>${metadata(item)}</dd>`).join('')}</dl>`;
-    return html(descriptiveText(value));
-  }
 
   function signedColor(value, scale = 1, background = false, fade = 1) {
     if (!finite(value)) return background ? '#e6e9e7' : '#64716e';
@@ -89,14 +88,10 @@
   const text = (x, y, value, attributes = '') => `<text x="${x}" y="${y}" ${attributes}>${html(value)}</text>`;
   const line = (x1, y1, x2, y2, className = 'grid-line') => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="${className}"/>`;
   const extent = (rows, fields = ['estimate']) => Math.max(.02, ...rows.flatMap(row => [...fields.map(field => row[field]), ...(validCI(row.ci95) ? row.ci95 : [])]).filter(finite).map(Math.abs)) * 1.12;
-  const uncertainty = row => row.n_clusters <= 2 ? 'inconclusive: at most two clusters' : validCI(row.ci95) ? 'pointwise 95% interval' : 'CI unavailable';
 
   function forest(id, rows, label, title, difference = false, sharedLimit = null, compact = false, options = {}) {
-    const raw = options.inference === 'raw';
+    const pooled = options.pooled === true;
     const benchmarkId = options.benchmark ?? current().benchmark;
-    const result = raw ? pooledSignificance : significance;
-    const mark = raw ? () => '' : star;
-    const testP = row => raw ? row.p_value : row.p_adjusted;
     if (!rows.length) {
       $(id).innerHTML = '<p class="empty">No contrast data available for this selection.</p>';
       return;
@@ -129,7 +124,7 @@
     const bottom = top + groups.length * step, height = bottom + 86;
     const limit = sharedLimit ?? extent(rows), x = value => left + (value + limit) / (2 * limit) * (right - left);
     const titleId = `${id}-title`, descId = `${id}-desc`;
-    let svg = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="${titleId} ${descId}"><title id="${titleId}">${html(title)}</title><desc id="${descId}">Signed native-score differences in ${html(scoreUnit(benchmarkId))}. Each row holds every model: ${html(modelLegendText())}. ${raw ? 'Each circle is a pooled P1/P2 point estimate. Raw significance uses uncorrected two-sided p less than .05 and more than two clusters; no correction is applied across the 154 planned tests.' : 'Each dot is a point estimate; circles are P1 and squares P2. A star denotes Holm-adjusted p at most .05.'} Each bar is a pointwise 95 percent cluster-bootstrap confidence interval when available. Full statistics are provided in the accompanying table.</desc>`;
+    let svg = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="${titleId} ${descId}"><title id="${titleId}">${html(title)}</title><desc id="${descId}">Δ in ${html(scoreUnit(benchmarkId))}; ${html(modelLegendText())}. ${pooled ? 'Circles are pooled estimates.' : 'Circles are P1, squares P2.'} Bars are 95% CIs. Values are in the table below.</desc>`;
     for (let tick = -2; tick <= 2; tick++) {
       const value = tick * limit / 2;
       svg += line(x(value), top - 15, x(value), bottom, tick === 0 ? 'zero-line' : 'grid-line');
@@ -138,8 +133,8 @@
     svg += text(left, 18, compact ? (difference ? 'A−B < 0' : 'Lower') : difference ? 'More negative A−B difference' : 'Lower native score', 'class="axis-label"');
     svg += text(right, 18, compact ? (difference ? 'A−B > 0' : 'Higher') : difference ? 'More positive A−B difference' : 'Higher native score', 'text-anchor="end" class="axis-label"');
     svg += text(estimateX, 18, `Estimate · ${scoreUnit(benchmarkId)}`, 'class="axis-label"');
-    svg += text(pX, 18, raw ? 'Raw p' : 'Holm p', 'class="axis-label"');
-    svg += text(resultX, 18, 'Result · α = .05', 'class="axis-label"');
+    svg += text(pX, 18, 'p', 'class="axis-label"');
+    svg += text(resultX, 18, 'Result', 'class="axis-label"');
     groups.forEach((group, index) => {
       const center = top + index * step + step / 2;
       svg += line(0, center + step / 2, width, center + step / 2, 'row-line');
@@ -154,10 +149,10 @@
           svg += text(x(0) + 10, y + 4, `${modelLabel(row.model)}: estimate unavailable`, 'class="missing-label"');
           svg += text(estimateX, y + 4, `${modelShort(row.model)} unavailable`, `class="axis-label" style="fill:${style.text}"`);
           svg += text(pX, y + 4, '—', 'class="axis-label"');
-          svg += text(resultX, y + 4, result(row), 'class="axis-label"');
+          svg += text(resultX, y + 4, significance(row), 'class="axis-label"');
           return;
         }
-        const description = `${name}: ${pp(row.estimate, benchmarkId)}; CI ${ci(row.ci95, benchmarkId)}; raw p ${pvalue(row.p_value)}${raw ? '; uncorrected pooled P1/P2' : `; Holm p ${pvalue(row.p_adjusted)}`}; ${result(row)}; ${count(row.n_pairs)} paired items, ${count(row.n_clusters)} clusters; ${uncertainty(row)}${difference ? `; ${row.opposite_signs ? 'opposite point signs' : 'no opposite point signs'}; ${reversal(row) ? 'supported reversal' : 'no supported reversal'}` : ''}`;
+        const description = `${name}: ${pp(row.estimate, benchmarkId)}; CI ${ci(row.ci95, benchmarkId)}; p ${pvalue(row.p_value)}; ${significance(row)}; ${count(row.n_pairs)} tasks, ${count(row.n_clusters)} clusters${difference && reversal(row) ? '; reversal' : ''}`;
         svg += `<g class="point-focus" tabindex="0" role="img" aria-label="${html(description)}"><title>${html(description)}</title>`;
         if (validCI(row.ci95)) {
           svg += `<path d="M${x(row.ci95[0])},${y - 4}v8 M${x(row.ci95[0])},${y}H${x(row.ci95[1])} M${x(row.ci95[1])},${y - 4}v8" style="stroke:${style.fill}" fill="none" class="ci-whisker"/>`;
@@ -165,12 +160,12 @@
         svg += `<circle cx="${x(row.estimate)}" cy="${y}" r="9" class="focus-ring"/>`;
         svg += row.method === 'P2' ? `<rect x="${x(row.estimate) - 4.5}" y="${y - 4.5}" width="9" height="9" style="fill:${style.fill}" class="data-point"/>` : `<circle cx="${x(row.estimate)}" cy="${y}" r="5" style="fill:${style.fill}" class="data-point"/>`;
         svg += '</g>';
-        svg += text(estimateX, y + 4, `${modelShort(row.model)} ${signed(row.estimate)}${mark(row)}`, `class="axis-label" style="fill:${style.text}"`);
-        svg += text(pX, y + 4, pvalue(testP(row)), `class="axis-label" style="fill:${style.text}"`);
-        svg += text(resultX, y + 4, result(row), `class="axis-label" style="fill:${style.text}"`);
+        svg += text(estimateX, y + 4, `${modelShort(row.model)} ${signed(row.estimate)}`, `class="axis-label" style="fill:${style.text}"`);
+        svg += text(pX, y + 4, pvalue(row.p_value), `class="axis-label" style="fill:${style.text}"`);
+        svg += text(resultX, y + 4, significance(row), `class="axis-label" style="fill:${style.text}"`);
       });
     });
-    svg += text((left + right) / 2, bottom + 49, `Dot = estimate, ${raw ? '½(P1 − neutral P1) + ½(P2 − neutral P2)' : difference ? '(A − neutral A) − (B − neutral B)' : 'treatment − reference'} · ${scoreUnit(benchmarkId)}`, 'text-anchor="middle" class="axis-label"');
+    svg += text((left + right) / 2, bottom + 49, `Dot = estimate, ${pooled ? '½(P1 − neutral P1) + ½(P2 − neutral P2)' : difference ? '(A − neutral A) − (B − neutral B)' : 'treatment − reference'} · ${scoreUnit(benchmarkId)}`, 'text-anchor="middle" class="axis-label"');
     // Key: the two models, the interval bar and the method shapes.
     let kx = compact ? 8 : left;
     const ky = bottom + 74, advance = caption => caption.length * 6.4 + 30;
@@ -181,9 +176,9 @@
       kx += 15 + advance(caption);
     });
     svg += `<path d="M${kx},${ky - 8}v8 M${kx},${ky - 4}H${kx + 26} M${kx + 26},${ky - 8}v8" style="stroke:var(--muted)" fill="none" class="ci-whisker"/>`;
-    svg += text(kx + 33, ky, 'bar = 95% interval', 'class="axis-label"');
-    kx += 33 + advance('bar = 95% interval');
-    if (!raw) {
+    svg += text(kx + 33, ky, 'bar = 95% CI', 'class="axis-label"');
+    kx += 33 + advance('bar = 95% CI');
+    if (!pooled) {
       svg += `<circle cx="${kx + 5}" cy="${ky - 4}" r="4.5" style="fill:var(--muted)"/>${text(kx + 14, ky, 'P1', 'class="axis-label"')}`;
       svg += `<rect x="${kx + 38}" y="${ky - 8.5}" width="9" height="9" style="fill:var(--muted)"/>${text(kx + 52, ky, 'P2', 'class="axis-label"')}`;
     }
@@ -193,13 +188,13 @@
   const takeawayBox = paragraphs => `<aside class="plot-takeaway"><strong>Takeaway</strong>${paragraphs.map(value => `<p>${html(value)}</p>`).join('')}</aside>`;
 
   function pooledTable(rows, allBenchmarks = false) {
-    return table(['Target / benchmark', 'Model', 'Pooled Δ', 'Pointwise 95% CI', 'Raw two-sided p', 'Uncorrected result', 'Complete tasks / assigned', 'Independent clusters', 'All-assigned Δ bounds', 'Test method'], rows.map(row => [
-      `${html(row.belief)} · ${html(beliefLabel(row.belief))}${allBenchmarks ? `<span class="subtext">${html(BENCHMARKS.find(bench => bench.id === row.benchmark)?.label || row.benchmark)}</span>` : ''}`,
+    return table(['Belief', 'Model', 'Δ', '95% CI', 'p', 'Result', 'Tasks / assigned', 'Clusters', 'Bounds with missing tasks'], rows.map(row => [
+      `${html(beliefLabel(row.belief))}${allBenchmarks ? `<span class="subtext">${html(BENCHMARKS.find(bench => bench.id === row.benchmark)?.label || row.benchmark)}</span>` : ''}`,
       html(modelLabel(row.model)), pp(row.estimate, row.benchmark), ci(row.ci95, row.benchmark),
-      pvalue(row.p_value), html(pooledSignificance(row)),
+      pvalue(row.p_value), html(significance(row)),
       `${count(row.n_pairs)} / ${count(row.n_assigned)}`, count(row.n_clusters),
-      ci(row.missing_bounds, row.benchmark), html(row.p_method || 'unavailable')
-    ]), 'effect-table pooled-table', `${rows.length} planned contrasts · raw p < .05, no multiple-testing correction · missing estimates retained`);
+      ci(row.missing_bounds, row.benchmark)
+    ]), 'effect-table pooled-table');
   }
 
   function renderPooled() {
@@ -208,46 +203,41 @@
     const source = DATA.pooled?.views?.[scoring]?.effects || [];
     const all = source.filter(row => MODELS.includes(row.model));
     const rows = all.filter(row => row.benchmark === benchmarkId).sort((a, b) => BELIEFS.findIndex(target => target.id === a.belief) - BELIEFS.findIndex(target => target.id === b.belief) || modelOrder(a, b));
-    const significant = all.filter(pooledSignificant);
+    const significant = all.filter(isSignificant);
     const safety = significant.filter(row => BENCHMARKS.find(item => item.id === row.benchmark)?.category?.endsWith('safety'));
     const capability = significant.filter(row => BENCHMARKS.find(item => item.id === row.benchmark)?.category?.endsWith('capability'));
     const targetCount = new Set(significant.map(row => row.belief)).size;
-    $('pooled-selection-context').textContent = `${MODELS.map(modelLabel).join(' and ')} · ${bench?.label || benchmarkId} · within-task P1/P2 pooled · ${scoring} scoring · raw p, no correction`;
-    $('pooled-view-note').textContent = (scoring === 'recovered'
-      ? 'Recovered scoring is the default: eligible repaired measurements of the same saved actor outputs, not regenerated responses or a new uniform-budget experiment. Select original scoring to inspect sensitivity.'
-      : 'Original-scoring sensitivity: no recovered measurements are substituted. Missingness can change the four-arm-complete task set; this is not independent replication.')
-      + (all.length ? ' Missing outcomes remain unknown.' : ' Pooled data are unavailable; no effects or significance counts can be inferred.');
     $('pooled-summary').innerHTML = [
-      [all.length ? significant.length : null, 'Raw p < .05 · all benchmarks', `${significant.length}/${all.length} available planned rows in this view; no correction across 154 planned tests.`],
-      [all.length ? safety.length : null, 'Safety findings · uncorrected', 'Counts across distinct safety metrics, not an average safety score.'],
-      [all.length ? capability.length : null, 'Capability / control findings · uncorrected', 'Includes AgentHarm benign-task control, not Terminal-Bench or SWE-bench; neither is in this snapshot.']
+      [all.length ? significant.length : null, 'Significant · all benchmarks', `of ${all.length} contrasts`],
+      [all.length ? safety.length : null, 'On safety benchmarks', 'Chat and agentic safety'],
+      [all.length ? capability.length : null, 'On capability benchmarks', 'Chat capability and AgentHarm benign']
     ].map(([value, label, detail]) => `<div class="summary-card"><strong>${count(value)}</strong><span>${html(label)}</span><p>${html(detail)}</p></div>`).join('');
-    const noTargets = BELIEFS.filter(target => !significant.some(row => row.belief === target.id)).map(target => target.id);
+    const noTargets = BELIEFS.filter(target => !significant.some(row => row.belief === target.id)).map(target => target.label);
     const noBenchmarks = BENCHMARKS.filter(item => !significant.some(row => row.benchmark === item.id)).map(item => item.label);
     $('pooled-study-takeaway').innerHTML = takeawayBox(all.length ? [
-      `${significant.length} of ${all.length} planned contrasts meet raw p < .05 with more than two clusters, across ${targetCount}/${BELIEFS.length} message targets. ${significant.filter(row => row.belief !== 'G1').length} involve targets other than the concrete scoring criterion. These are uncorrected exploratory findings, not confirmed discoveries.`,
-      MODELS.map(model => `${modelLabel(model)}: ${significant.filter(row => row.model === model).length} raw-significant contrasts`).join('; ') + '. Model estimates are separate; these counts do not test differences between models.',
-      `No eligible raw-significant findings for targets ${noTargets.length ? noTargets.join(', ') : '(none)'}; benchmarks ${noBenchmarks.length ? noBenchmarks.join(', ') : '(none)'}. Absence of significance is not evidence of equivalence; the misalignment benchmark has only two independent scenario families.`,
-      'Selection among 154 planned tests, alternate scoring views and post-inspection analysis can increase false discoveries. Effect size, intervals and missingness matter. No tested direct pooled reversal or causal latent-belief mechanism is established.'
-    ] : ['No pooled data are available for this scoring view. Missing results are not zero effects.']);
-    $('pooled-effect-heading').textContent = `${bench?.label || benchmarkId} · all 11 targets · both models`;
+      `${significant.length} of ${all.length} contrasts are significant, covering ${targetCount} of ${BELIEFS.length} beliefs; ${significant.filter(row => row.belief !== 'G1').length} do not involve the concrete criterion.`,
+      MODELS.map(model => `${modelLabel(model)}: ${significant.filter(row => row.model === model).length}`).join('; ') + '.',
+      ...(noTargets.length ? [`No significant result for: ${noTargets.join(', ')}.`] : []),
+      ...(noBenchmarks.length ? [`No significant result on: ${noBenchmarks.join(', ')}.`] : [])
+    ] : ['No pooled data for this scoring view.']);
+    $('pooled-effect-heading').textContent = bench?.label || benchmarkId;
     $('pooled-metric-context').textContent = nativeContext(bench);
     const fewClusters = rows.some(row => finite(row.estimate) && row.n_clusters <= 2);
     $('pooled-cluster-warning').hidden = !fewClusters;
-    $('pooled-cluster-warning').textContent = 'At most two independent task/scenario clusters are available for some or all estimates. These rows are inconclusive regardless of their numerical p-value or interval. Related variants do not add independent scenario families.';
+    $('pooled-cluster-warning').textContent = 'Some estimates have two or fewer independent clusters and are inconclusive.';
     $('pooled-takeaway').innerHTML = takeawayBox(MODELS.map(model => {
-      const own = rows.filter(row => row.model === model), found = own.filter(pooledSignificant);
+      const own = rows.filter(row => row.model === model), found = own.filter(isSignificant);
       const prefix = `${modelLabel(model)}: `;
-      if (!own.some(row => finite(row.estimate))) return `${prefix}no usable pooled estimates in this selection.`;
-      if (own.every(row => !finite(row.estimate) || row.n_clusters <= 2)) return `${prefix}descriptive estimates only; too few independent clusters for a significance claim.`;
-      if (!found.length) return `${prefix}none of ${own.length} target contrasts meets the uncorrected threshold. This does not establish no effect or equivalence.`;
+      if (!own.some(row => finite(row.estimate))) return `${prefix}no estimates.`;
+      if (own.every(row => !finite(row.estimate) || row.n_clusters <= 2)) return `${prefix}all estimates inconclusive (too few clusters).`;
+      if (!found.length) return `${prefix}none of ${own.length} beliefs significant.`;
       const extremes = [
         found.filter(row => row.estimate < 0).sort((a, b) => a.estimate - b.estimate)[0],
         found.filter(row => row.estimate >= 0).sort((a, b) => b.estimate - a.estimate)[0]
       ].filter(Boolean);
-      return `${prefix}${found.length}/${own.length} contrasts meet raw p < .05. Largest raw-significant changes in each observed direction: ${extremes.map(row => `${row.belief} (“${beliefLabel(row.belief)}”) ${pp(row.estimate, benchmarkId)}, raw p ${pvalue(row.p_value)}`).join('; ')}. These selected highlights do not test differences or reversals; every target appears below.`;
+      return `${prefix}${found.length} of ${own.length} significant. Largest: ${extremes.map(row => `“${beliefLabel(row.belief)}” ${pp(row.estimate, benchmarkId)} (p ${pvalue(row.p_value)})`).join('; ')}.`;
     }));
-    forest('pooled-chart', rows, row => `${row.belief} · ${beliefLabel(row.belief)}`, 'Pooled P1/P2 effects with uncorrected two-sided p-values', false, null, false, {inference: 'raw', benchmark: benchmarkId});
+    forest('pooled-chart', rows, row => beliefLabel(row.belief), 'Pooled P1/P2 effects', false, null, false, {pooled: true, benchmark: benchmarkId});
     $('pooled-table').innerHTML = pooledTable(rows);
     $('pooled-all-table').innerHTML = pooledTable(all, true);
     $('pooled-benchmark-tabs').querySelectorAll('[role="tab"]').forEach(tab => {
@@ -262,32 +252,29 @@
     const control = !difference && rows.some(row => row.reference === 'information');
     return takeawayBox(MODELS.map(model => {
       const own = rows.filter(row => row.model === model), known = own.filter(row => finite(row.estimate));
-      const supported = own.filter(corrected), prefix = `${modelLabel(model)}: `;
-      if (!known.length) return `${prefix}no usable estimates in this selection; no conclusion is available.`;
-      if (known.every(row => row.n_clusters <= 2)) return `${prefix}too few independent task clusters for reliable inference. Visible differences are descriptive, not established effects.`;
+      const found = own.filter(isSignificant), prefix = `${modelLabel(model)}: `;
+      if (!known.length) return `${prefix}no estimates.`;
+      if (known.every(row => row.n_clusters <= 2)) return `${prefix}all estimates inconclusive (too few clusters).`;
       if (control) {
         const neutral = own.find(row => row.reference === 'neutral'), information = own.find(row => row.reference === 'information');
         const result = row => !row || !finite(row.estimate) ? 'unavailable' : `${pp(row.estimate)} (${significance(row).toLowerCase()})`;
-        return `${prefix}criterion message versus neutral: ${result(neutral)}; versus the same criterion information without the evaluation claim: ${result(information)}. ${corrected(information) ? 'The added evaluation claim has corrected evidence of an effect beyond that information control.' : 'An effect beyond the criterion information itself is not established; this does not prove the two conditions equivalent.'}`;
+        return `${prefix}vs neutral ${result(neutral)}; vs information control ${result(information)}.`;
       }
-      if (!supported.length) return `${prefix}none of ${own.length} ${difference ? 'direct message comparisons' : 'message-versus-neutral effects'} survives Holm correction. This is insufficient evidence, not proof that ${difference ? 'all messages act identically' : 'the messages have zero effect'}.${known.length < own.length ? ` ${own.length - known.length} estimates are unavailable.` : ''}`;
+      if (!found.length) return `${prefix}none of ${own.length} ${difference ? 'differences' : 'effects'} significant.`;
       if (difference) {
-        const criterion = supported.filter(row => row.belief_a === 'G1' || row.belief_b === 'G1').length;
+        const criterion = found.filter(row => row.belief_a === 'G1' || row.belief_b === 'G1').length;
         const reversals = own.filter(reversal).length;
-        return `${prefix}${supported.length}/${own.length} direct comparisons survive correction${criterion ? `; ${criterion} involve the concrete-scoring-criterion message` : ''}. ${reversals ? `${reversals} meet the supported opposite-direction reversal criterion.` : 'None establishes an opposite-direction reversal; the supported differences concern effect size, not established reversals.'}`;
+        return `${prefix}${found.length} of ${own.length} differences significant${criterion ? ` (${criterion} involve the concrete criterion)` : ''}; ${reversals} reversals.`;
       }
-      const strongest = supported.reduce((a, b) => Math.abs(a.estimate) >= Math.abs(b.estimate) ? a : b);
-      return `${prefix}${supported.length}/${own.length} message effects survive correction. Largest supported absolute estimate: “${beliefLabel(strongest.belief)}”, ${pp(strongest.estimate)} in ${benchmark()?.metric || 'native score'} versus its matched neutral (Holm p ${pvalue(strongest.p_adjusted)}). This is a supplied-message effect, not proof of an adopted belief.`;
+      const strongest = found.reduce((a, b) => Math.abs(a.estimate) >= Math.abs(b.estimate) ? a : b);
+      return `${prefix}${found.length} of ${own.length} effects significant. Largest: “${beliefLabel(strongest.belief)}” ${pp(strongest.estimate)} (p ${pvalue(strongest.p_value)}).`;
     }));
   }
 
   function overviewTakeaway(rows, difference = false) {
-    const supported = rows.filter(corrected);
-    const names = BENCHMARKS.filter(bench => supported.some(row => row.benchmark === bench.id)).map(bench => bench.label);
-    return takeawayBox([
-      `${difference ? 'Direct message differences' : 'Message-versus-neutral effects'} survive correction in ${names.length ? names.join(' and ') : 'none of the benchmarks in this selection'}. This lists where evidence occurs; it is not an average across benchmarks or models.`,
-      'No corrected result does not mean no effect. In particular, the misalignment benchmark has only two independent scenario-family clusters, so its inference is inconclusive. Compare each benchmark in its own units.'
-    ]);
+    const found = rows.filter(isSignificant);
+    const names = BENCHMARKS.filter(bench => found.some(row => row.benchmark === bench.id)).map(bench => bench.label);
+    return takeawayBox([`Significant ${difference ? 'differences' : 'effects'} on: ${names.length ? names.join(', ') : 'none'}.`]);
   }
 
   function methodForests(id, rows, label, title, difference = false) {
@@ -300,24 +287,23 @@
   }
 
   function effectTable(rows) {
-    return table(['Belief / method / reference', 'Model', 'Δ', 'Pointwise 95% CI', 'Pairs / assigned', 'Clusters', 'Raw p', 'Holm p · 336', 'All-assigned Δ bounds', 'Inference'], rows.map(row => [
+    return table(['Belief / method / reference', 'Model', 'Δ', '95% CI', 'Tasks / assigned', 'Clusters', 'p', 'Bounds with missing tasks', 'Result'], rows.map(row => [
       `${html(beliefLabel(row.belief))}<span class="subtext">${html(row.method)} · ${html(row.reference)}</span>`, html(modelLabel(row.model)),
-      `<span class="number">${pp(row.estimate)}${star(row)}</span>`, ci(row.ci95), `${count(row.n_pairs)} / ${count(row.n_assigned)}`, count(row.n_clusters), pvalue(row.p_value), pvalue(row.p_adjusted), ci(row.missing_bounds), `${significance(row)} · ${uncertainty(row)}`
+      `<span class="number">${pp(row.estimate)}</span>`, ci(row.ci95), `${count(row.n_pairs)} / ${count(row.n_assigned)}`, count(row.n_clusters), pvalue(row.p_value), ci(row.missing_bounds), significance(row)
     ]), 'effect-table');
   }
 
   function renderHeatmap() {
     const rows = effects('neutral', true);
     const scale = Math.max(.01, ...rows.map(row => Math.abs(row.estimate)).filter(finite));
-    $('heatmap-key').innerHTML = `<span>Blue ${signed(-scale)}</span><span class="signed-ramp" aria-hidden="true"></span><span>Orange ${signed(scale)}</span><span>Native 0–100 score points (FORTRESS: risk points; rates: pp). Scale shared by both models within this method / scoring view · white = zero · ★ corrected evidence · each cell stacks ${html(MODELS.map(model => `${modelLabel(model)} (${MODEL_STYLE[model].name} tint)`).join(' above '))}; read magnitude from the number</span>`;
-    $('heatmap-takeaway').innerHTML = overviewTakeaway(rows);
+    $('heatmap-key').innerHTML = `<span>Blue ${signed(-scale)}</span><span class="signed-ramp" aria-hidden="true"></span><span>Orange ${signed(scale)}</span><span>★ significant · each cell: ${html(MODELS.map(modelLabel).join(' above '))}</span>`;
     const index = new Map(rows.map(row => [`${row.model}|${row.belief}|${row.method}|${row.benchmark}`, row]));
     const groupHeaders = BENCHMARK_GROUPS.map(group => `<th scope="colgroup" colspan="${group.benchmarks.length}" class="benchmark-group-heading benchmark-${group.kind}">${html(group.label)}</th>`).join('');
     const benchmarkHeaders = BENCHMARK_GROUPS.map(group => group.benchmarks.map(bench => `<th scope="col"><button class="benchmark-button benchmark-${group.kind}" type="button" data-benchmark="${html(bench.id)}" aria-label="${html(bench.label)} — ${html(group.label)}" aria-pressed="${bench.id === current().benchmark}">${html(bench.label)}<span class="subtext">${html(bench.metric)}</span></button></th>`).join('')).join('');
-    $('effect-heatmap').innerHTML = `<table class="heatmap"><caption>${html(MODELS.map(modelLabel).join(' and '))} · matched neutral · ${html(current().view)} scoring</caption><thead><tr><th scope="col" rowspan="2">Belief target / method</th>${groupHeaders}</tr><tr>${benchmarkHeaders}</tr></thead><tbody>${BELIEFS.map(target => methods().map(method => `<tr><th scope="row">${html(target.label)}<span class="subtext">${html(method)}</span></th>${BENCHMARKS.map(bench => `<td>${MODELS.map(model => {
+    $('effect-heatmap').innerHTML = `<table class="heatmap"><thead><tr><th scope="col" rowspan="2">Belief / method</th>${groupHeaders}</tr><tr>${benchmarkHeaders}</tr></thead><tbody>${BELIEFS.map(target => methods().map(method => `<tr><th scope="row">${html(target.label)}<span class="subtext">${html(method)}</span></th>${BENCHMARKS.map(bench => `<td>${MODELS.map(model => {
       const row = index.get(`${model}|${target.id}|${method}|${bench.id}`);
-      const detail = `${modelLabel(model)}, ${target.label}, ${method}, ${bench.label}: ${pp(row?.estimate, bench.id)}; CI ${ci(row?.ci95, bench.id)}; Holm p ${pvalue(row?.p_adjusted)}; ${count(row?.n_pairs)} of ${count(row?.n_assigned)} paired items; ${count(row?.n_clusters)} clusters`;
-      return modelCell(model, row?.estimate, scale, `${html(modelShort(model))} ${finite(row?.estimate) ? `${signed(row.estimate)}${star(row)}` : 'unavailable'}<span class="subtext">n=${count(row?.n_pairs)}/${count(row?.n_assigned)}${row?.n_clusters <= 2 ? ' · 2-cluster caution' : ''}</span>`, detail);
+      const detail = `${modelLabel(model)}, ${target.label}, ${method}, ${bench.label}: ${pp(row?.estimate, bench.id)}; CI ${ci(row?.ci95, bench.id)}; p ${pvalue(row?.p_value)}; ${count(row?.n_pairs)} of ${count(row?.n_assigned)} tasks; ${count(row?.n_clusters)} clusters`;
+      return modelCell(model, row?.estimate, scale, `${html(modelShort(model))} ${finite(row?.estimate) ? `${signed(row.estimate)}${star(row)}` : 'unavailable'}<span class="subtext">n=${count(row?.n_pairs)}/${count(row?.n_assigned)}${row?.n_clusters <= 2 ? ' · ≤2 clusters' : ''}</span>`, detail);
     }).join('')}</td>`).join('')}</tr>`).join('')).join('')}</tbody></table>`;
   }
 
@@ -325,18 +311,11 @@
     const rows = effects();
     const order = new Map(BELIEFS.map((row, index) => [row.id, index]));
     rows.sort((a, b) => (order.get(a.belief) ?? 100) - (order.get(b.belief) ?? 100) || a.method.localeCompare(b.method) || modelOrder(a, b));
-    $('effect-heading').textContent = `${benchmark()?.label || 'Selected benchmark'} · all ${BELIEFS.length} supplied messages`;
-    $('effect-scope').textContent = `${selectionLabel()} · treatment − matched neutral on the same benchmark’s tasks.`;
+    $('effect-heading').textContent = benchmark()?.label || 'Selected benchmark';
     $('metric-context').textContent = nativeContext(benchmark());
     $('cluster-warning').hidden = !rows.some(row => row.n_clusters <= 2);
-    $('cluster-warning').textContent = 'Cluster-inference warning: this selection includes contrasts with at most two clusters. In particular, the misalignment benchmark has only two scenario families. Point estimates are descriptive; reliable differences or reversals cannot be inferred from them.';
-    $('effect-significance-summary').textContent = MODELS.map(model => {
-      const own = rows.filter(row => row.model === model);
-      const inconclusive = own.filter(row => significance(row) === 'Inconclusive').length;
-      const unavailable = own.filter(row => significance(row) === 'Unavailable').length;
-      return `${modelLabel(model)}: ${own.filter(corrected).length} of ${own.length} selected effects significant after Holm correction${inconclusive ? `; ${inconclusive} inconclusive (too few clusters)` : ''}${unavailable ? `; ${unavailable} unavailable` : ''}.`;
-    }).join(' ');
-    methodForests('effect-chart', rows, row => beliefLabel(row.belief), `${selectionLabel()}: all supplied-message effects relative to matched neutral`);
+    $('cluster-warning').textContent = 'Some estimates have two or fewer independent clusters and are inconclusive.';
+    methodForests('effect-chart', rows, row => beliefLabel(row.belief), `${selectionLabel()}: effects vs neutral`);
     $('effect-table').innerHTML = effectTable(rows);
   }
 
@@ -344,7 +323,7 @@
   let matrixRows = new Map();
 
   function pairDescription(row) {
-    return `${modelLabel(row.model)}. A: ${beliefLabel(row.belief_a)}. B: ${beliefLabel(row.belief_b)}. ${methodLabel(row.method)}. A−B: ${pp(row.estimate)}; pointwise 95% CI ${ci(row.ci95)}; Holm p ${pvalue(row.p_adjusted)}; ${count(row.n_pairs)} common-task pairs; ${count(row.n_clusters)} clusters; ${uncertainty(row)}${corrected(row) ? '; corrected evidence of a difference' : '; no corrected evidence of a difference'}.`;
+    return `${modelLabel(row.model)}. A: ${beliefLabel(row.belief_a)}. B: ${beliefLabel(row.belief_b)}. ${methodLabel(row.method)}. A−B: ${pp(row.estimate)}; 95% CI ${ci(row.ci95)}; p ${pvalue(row.p_value)}; ${count(row.n_pairs)} tasks; ${count(row.n_clusters)} clusters; ${significance(row)}.`;
   }
 
   function selectMatrixCell(button) {
@@ -355,15 +334,10 @@
     button.closest('.pair-matrix').querySelectorAll('button[data-pair]').forEach(cell => {
       cell.setAttribute('aria-pressed', String(cell === button));
     });
-    const exact = value => finite(value) ? String(value) : 'unavailable';
     $(`pair-detail-${method}`).innerHTML = `<h4>A: ${html(beliefLabel(pair[0].belief_a))}<br>B: ${html(beliefLabel(pair[0].belief_b))}</h4>${pair.map(row => `
-      <p><strong style="color:${MODEL_STYLE[row.model].text}">${html(modelLabel(row.model))} · A−B: ${pp(row.estimate)}${star(row)}</strong> · pointwise 95% CI ${ci(row.ci95)}<br>
-      Holm-adjusted p (1,540 planned): ${exact(row.p_adjusted)} · raw p: ${exact(row.p_value)}<br>
-      ${count(row.n_pairs)} common-task pairs · ${count(row.n_clusters)} clusters · ${uncertainty(row)}<br>
-      Effects on these same common tasks: A − neutral A = ${pp(row.effect_a)}; B − neutral B = ${pp(row.effect_b)}.<br>
-      Opposite point signs: ${finite(row.effect_a) && finite(row.effect_b) ? (row.opposite_signs ? 'yes, descriptive only' : 'no') : 'unavailable'} · Supported reversal: ${reversal(row) ? 'yes' : 'no'}.<br>
-      <span class="fine">Unrounded native 0–1 units: difference ${exact(row.estimate)}; CI ${validCI(row.ci95) ? `[${row.ci95.map(exact).join(', ')}]` : 'unavailable'}.</span></p>`).join('')}
-      <p class="fine">${html(methodLabel(method))} · ${html(benchmark()?.label)}. A missing interval is not zero uncertainty; a missing estimate is not zero effect.</p>`;
+      <p><strong style="color:${MODEL_STYLE[row.model].text}">${html(modelLabel(row.model))} · A−B: ${pp(row.estimate)}${star(row)}</strong> · 95% CI ${ci(row.ci95)}<br>
+      p ${pvalue(row.p_value)} · ${count(row.n_pairs)} tasks · ${count(row.n_clusters)} clusters · ${significance(row)}<br>
+      A − neutral A = ${pp(row.effect_a)}; B − neutral B = ${pp(row.effect_b)} · Reversal: ${reversal(row) ? 'yes' : 'no'}</p>`).join('')}`;
   }
 
   function renderMatrices(rows) {
@@ -384,7 +358,7 @@
         const detail = pair.map(pairDescription).join(' ');
         return `<td><button type="button" data-method="${method}" data-pair="${key}" aria-pressed="false" aria-controls="pair-detail-${method}" aria-label="${html(detail)}" title="${html(detail)}">${pair.map(row => modelCell(row.model, row.estimate, scale, `${finite(row.estimate) ? `${signed(row.estimate)}${star(row)}` : '—'}${row.n_clusters <= 2 ? '<span class="pair-caution" aria-hidden="true">≤2</span>' : ''}`)).join('')}</button></td>`;
       }).join('')}</tr>`).join('');
-      return `<article class="matrix-panel"><h4>${html(methodLabel(method))}</h4><div class="table-scroll" tabindex="0" role="region" aria-label="${html(methodLabel(method))}: all 55 unique same-benchmark comparisons"><table class="pair-matrix"><caption>Row A − column B · ${html(benchmark()?.label)} · ${html(scoreUnit())}. Each cell stacks ${html(MODELS.map(model => `${modelLabel(model)} (${MODEL_STYLE[model].name} tint)`).join(' above '))}. Column numbers are navigation positions matched to the numbered full message names on the rows, not target identifiers.</caption><thead><tr><th scope="col">Message A ↓ / message B →</th>${BELIEFS.map((target, i) => `<th scope="col" title="${html(target.label)}"><span aria-hidden="true">${i + 1}</span><span class="visually-hidden">${i + 1}. ${html(target.label)}</span></th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div><div id="pair-detail-${method}" class="pair-detail" aria-live="polite" aria-atomic="true"></div></article>`;
+      return `<article class="matrix-panel"><h4>${html(methodLabel(method))}</h4><div class="table-scroll" tabindex="0" role="region" aria-label="${html(methodLabel(method))}: all 55 pairs"><table class="pair-matrix"><caption>Row A − column B · ${html(scoreUnit())} · each cell: ${html(MODELS.map(modelLabel).join(' above '))}</caption><thead><tr><th scope="col">A ↓ / B →</th>${BELIEFS.map((target, i) => `<th scope="col" title="${html(target.label)}"><span aria-hidden="true">${i + 1}</span><span class="visually-hidden">${i + 1}. ${html(target.label)}</span></th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div><div id="pair-detail-${method}" class="pair-detail" aria-live="polite" aria-atomic="true"></div></article>`;
     }).join('');
     methods().forEach(method => {
       const key = matrixSelections.get(method) || '0-1';
@@ -394,11 +368,9 @@
   }
 
   function renderDifferences() {
-    const state = current();
-    $('difference-scope').textContent = `${selectionLabel()} · same-benchmark comparisons, not a cross-benchmark total.`;
-    $('difference-detail-heading').textContent = `${benchmark()?.label || 'Selected benchmark'} · paired message-effect differences`;
+    $('difference-detail-heading').textContent = benchmark()?.label || 'Selected benchmark';
     $('difference-metric-context').textContent = nativeContext(benchmark());
-    $('difference-overview-note').textContent = `${state.view === 'recovered' ? 'Recovered' : 'Original'} scoring. Each cell shows corrected direct differences / estimable comparisons (55 planned). This overview ignores the benchmark and method filters. Holm correction still covers all 1,540 planned comparisons in this scoring view. Zero means no corrected evidence, not proof of equal effects.`;
+    $('difference-overview-note').textContent = `Significant differences / comparisons with an estimate (55 pairs) · ${current().view} scoring.`;
     const overview = view()?.differences || [];
     $('difference-overview-takeaway').innerHTML = overviewTakeaway(overview, true);
     $('difference-overview').innerHTML = table(['Benchmark', ...MODELS.flatMap(model => METHODS.map(method => `${DATA.models[model]?.label || model} · ${method}`))], BENCHMARKS.map(bench => [
@@ -408,41 +380,31 @@
         const available = cells.filter(row => finite(row.estimate));
         if (!available.length) return '<span class="unknown">unavailable</span>';
         if (available.every(row => row.n_clusters <= 2)) return '<span class="unknown">Inconclusive · ≤2 clusters</span>';
-        return `${count(cells.filter(corrected).length)} / ${count(available.length)}`;
+        return `${count(cells.filter(isSignificant).length)} / ${count(available.length)}`;
       }))
-    ]), '', 'Counts of corrected differences between supplied conditions—not correlations or proof of adopted beliefs.');
+    ]));
     const rows = selected(view()?.differences);
     $('difference-takeaway').innerHTML = methods().map(method => `<article><h4>${html(methodLabel(method))}</h4>${effectTakeaway(rows.filter(row => row.method === method), true)}</article>`).join('');
-    const significant = rows.filter(corrected);
-    const opposite = rows.filter(row => row.opposite_signs === true);
+    const significant = rows.filter(isSignificant);
     const supported = rows.filter(reversal);
-    $('difference-summary').textContent = `${MODELS.map(model => {
-      const own = rows.filter(row => row.model === model);
-      const estimable = own.filter(row => finite(row.estimate)).length;
-      const ownSignificant = own.filter(corrected);
-      const ownOpposite = own.filter(row => row.opposite_signs === true).length;
-      const ownSupported = own.filter(reversal).length;
-      const g1Count = ownSignificant.filter(row => row.belief_a === 'G1' || row.belief_b === 'G1').length;
-      return `${modelLabel(model)}: ${count(own.length)} selected comparisons, ${count(estimable)} with an estimate; ${count(ownSignificant.length)} with Holm-adjusted evidence of a direct difference (${count(g1Count)} involve the concrete-scoring-criterion condition); ${count(ownOpposite)} with opposite point-estimate signs; ${count(ownSupported)} supported reversals (${count(ownOpposite - ownSupported)} opposite-sign comparisons do not meet the criterion); ${count(own.length - estimable)} estimates unavailable.`;
-    }).join(' ')} Counts apply only to the detailed selection above.`;
     const matrix = $('difference-view').value === 'matrix';
     $('difference-takeaway').hidden = !matrix;
     $('difference-matrices').hidden = !matrix;
     $('difference-chart').hidden = matrix;
-    $('difference-selection-note').textContent = `Showing all ${BELIEFS.length * (BELIEFS.length - 1) / 2} unique pairs per method (${methods().length} ${methods().length === 1 ? 'method' : 'separate methods'}), without significance filtering. ${matrix ? 'Select or keyboard-focus a cell for its full message names, effect, interval, adjusted p-value and task counts. Row A minus column B; ≤2 marks inconclusive cluster inference. Blank lower-triangle cells omit duplicates, not results.' : 'All intervals appear in message-name order, separated by method; unavailable estimates remain explicit.'}`;
+    $('difference-selection-note').textContent = matrix ? 'Row A − column B. Blue = negative, orange = positive, grey = unavailable; ★ significant; ≤2 = inconclusive. Select a cell for details.' : '';
     if (matrix) {
       $('difference-chart').innerHTML = '';
       renderMatrices(rows);
     } else {
       $('difference-matrices').innerHTML = '';
       const plotted = [...rows].sort((a, b) => a.method.localeCompare(b.method) || beliefLabel(a.belief_a).localeCompare(beliefLabel(b.belief_a)) || beliefLabel(a.belief_b).localeCompare(beliefLabel(b.belief_b)));
-      methodForests('difference-chart', plotted, row => `A: ${beliefLabel(row.belief_a)}\nB: ${beliefLabel(row.belief_b)}`, `${selectionLabel()}: paired message-effect differences`, true);
+      methodForests('difference-chart', plotted, row => `A: ${beliefLabel(row.belief_a)}\nB: ${beliefLabel(row.belief_b)}`, `${selectionLabel()}: differences`, true);
     }
-    $('difference-table-heading').textContent = `All ${count(rows.length)} selected direct differences · including unsupported and unavailable results`;
-    $('difference-table').innerHTML = table(['A − B / method', 'Model', 'Direct difference', 'Pointwise 95% CI', 'Effect A · common items', 'Effect B · common items', 'Pairs', 'Clusters', 'Raw p', 'Holm p · 1,540', 'Opposite point signs?', 'Supported reversal?', 'Inference'], [...rows].sort((a, b) => a.method.localeCompare(b.method) || a.belief_a.localeCompare(b.belief_a) || a.belief_b.localeCompare(b.belief_b) || modelOrder(a, b)).map(row => [
-      `A: ${html(beliefLabel(row.belief_a))}<br>B: ${html(beliefLabel(row.belief_b))}<span class="subtext">${html(row.method)}</span>`, html(modelLabel(row.model)), `<span class="number">${pp(row.estimate)}${star(row)}</span>`, ci(row.ci95), pp(row.effect_a), pp(row.effect_b), count(row.n_pairs), count(row.n_clusters), pvalue(row.p_value), pvalue(row.p_adjusted), finite(row.effect_a) && finite(row.effect_b) ? (row.opposite_signs ? 'Yes · descriptive only' : 'No') : 'unavailable', reversal(row) ? 'Yes · corrected criterion met' : 'No', uncertainty(row)
+    $('difference-table-heading').textContent = `Table of differences (${count(rows.length)})`;
+    $('difference-table').innerHTML = table(['A − B / method', 'Model', 'A − B', '95% CI', 'Effect A', 'Effect B', 'Tasks', 'Clusters', 'p', 'Result', 'Reversal'], [...rows].sort((a, b) => a.method.localeCompare(b.method) || a.belief_a.localeCompare(b.belief_a) || a.belief_b.localeCompare(b.belief_b) || modelOrder(a, b)).map(row => [
+      `A: ${html(beliefLabel(row.belief_a))}<br>B: ${html(beliefLabel(row.belief_b))}<span class="subtext">${html(row.method)}</span>`, html(modelLabel(row.model)), `<span class="number">${pp(row.estimate)}</span>`, ci(row.ci95), pp(row.effect_a), pp(row.effect_b), count(row.n_pairs), count(row.n_clusters), pvalue(row.p_value), significance(row), reversal(row) ? 'Yes' : 'No'
     ]), 'difference-table');
-    return {rows, significant, opposite, supported};
+    return {rows, significant, supported};
   }
 
   const correlation = value => finite(value) ? value.toFixed(3) : 'unavailable';
@@ -452,11 +414,10 @@
       item.monitor === row.monitor && item.view === current().view);
     return ['full', 'without_G1'].map(sensitivity => {
       const item = matches.find(candidate => candidate.sensitivity === sensitivity);
-      const label = `${modelLabel(row.model)} · ${sensitivity === 'full' ? 'All available conditions' : 'Without concrete scoring criterion · sensitivity'}`;
-      if (!item) return `<div class="association-inference"><strong>${label}</strong><p class="unknown">Inference unavailable for this exact selection.</p></div>`;
+      const label = `${modelLabel(row.model)} · ${sensitivity === 'full' ? 'all beliefs' : 'without concrete criterion'}`;
+      if (!item) return `<div class="association-inference"><strong>${label}</strong><p class="unknown">Unavailable.</p></div>`;
       const interval = validCI(item.ci95) ? `[${item.ci95.map(correlation).join(', ')}]` : 'unavailable';
-      const noise = item.shared_task_noise;
-      return `<div class="association-inference"><strong>${label}: r = ${correlation(item.r)}</strong><p>Pointwise 95% cluster-bootstrap CI: ${interval}<br>Approximate raw p: ${pvalue(item.p_raw)} · Holm p (336 planned): ${pvalue(item.p_adjusted)}<br>${count(item.n_clusters)} source-task clusters · ${count(item.min_pairs)}–${count(item.max_pairs)} pairs per condition${item.unavailable_reason ? `<br><span class="unknown">Inference unavailable: ${html(item.unavailable_reason)}</span>` : ''}</p><p class="fine">Descriptive disjoint-half diagnostic: median r = ${correlation(noise?.median)}; sign stability = ${percent(noise?.sign_stability)}; valid directional correlations ${count(noise?.valid_directional_correlations)} / ${count(noise?.attempted_directional_correlations)}. These repeated splits are dependent; this is not a CI or significance test.</p></div>`;
+      return `<div class="association-inference"><strong>${label}: r = ${correlation(item.r)}</strong><p>95% CI ${interval} · p ${pvalue(item.p_raw)} · ${count(item.n_clusters)} clusters${item.unavailable_reason ? ' · <span class="unknown">test unavailable</span>' : ''}</p></div>`;
     }).join('');
   }
 
@@ -506,21 +467,24 @@
       kx += 45 + caption.length * 6.4;
     });
     svg += '</svg>';
+    const associationSignificant = item => finite(item?.r) && finite(item?.p_raw) && item.p_raw < .05 && item.n_clusters > 2;
     const takeaway = takeawayBox(sets.map(({row}) => {
       const candidates = (DATA.association_inference?.associations || []).filter(item => item.model === row.model && item.benchmark === row.benchmark && item.method === row.method && item.monitor === row.monitor && item.view === current().view);
       const full = candidates.find(item => item.sensitivity === 'full'), without = candidates.find(item => item.sensitivity === 'without_G1');
-      if (!full || !finite(full.p_adjusted) || !finite(full.r) || full.n_clusters <= 2) return `${modelLabel(row.model)}: association inference is unavailable or inconclusive for this selection; the point pattern alone does not establish a relationship.`;
-      if (full.p_adjusted > .05) return `${modelLabel(row.model)}: the monitor–behavior association does not survive correction (r ${correlation(full.r)}, Holm p ${pvalue(full.p_adjusted)}). A visible slope is not reliable evidence here; this does not establish no association.`;
-      return `${modelLabel(row.model)}: a ${full.r < 0 ? 'negative' : 'positive'} association survives correction (r ${correlation(full.r)}, Holm p ${pvalue(full.p_adjusted)}): conditions with larger monitor increases tend to have ${full.r < 0 ? 'lower' : 'higher'} ${benchmark()?.metric || 'native scores'}. ${!without || !finite(without.p_adjusted) || without.n_clusters <= 2 ? 'The without-criterion sensitivity is unavailable.' : without.p_adjusted <= .05 ? 'It also survives removing the concrete-scoring-criterion condition.' : 'It does not survive removing the concrete-scoring-criterion condition; broader robustness is not established.'} Association is not evidence that awareness caused the behavior.`;
+      const prefix = `${modelLabel(row.model)}: `;
+      if (!full || !finite(full.r) || !finite(full.p_raw) || full.n_clusters <= 2) return `${prefix}unavailable or inconclusive.`;
+      if (!associationSignificant(full)) return `${prefix}not significant (r ${correlation(full.r)}, p ${pvalue(full.p_raw)}).`;
+      const robust = !without || !finite(without.p_raw) || without.n_clusters <= 2 ? 'unavailable' : associationSignificant(without) ? 'still significant' : 'not significant';
+      return `${prefix}significant ${full.r < 0 ? 'negative' : 'positive'} association (r ${correlation(full.r)}, p ${pvalue(full.p_raw)}); without the concrete criterion: ${robust}.`;
     }));
-    const summary = sets.map(({row}) => `${html(modelShort(row.model))} r = ${correlation(row.r)} · ${count(row.n_conditions)} conditions`).join('<br>');
-    return `<article class="scatter-panel"><h4>${html(method)} · ${html(monitor)}</h4>${takeaway}<p class="association-summary">Observed profile<br>${summary}</p>${sets.map(({row}) => associationInference(row)).join('')}${all.length ? `${svg}<ol class="scatter-key">${order.map(id => `<li>${html(beliefLabel(id))}</li>`).join('')}</ol>` : '<p class="empty">No paired monitor-and-score points available.</p>'}<p id="scatter-detail-${index}" class="scatter-detail" aria-live="polite">Point numbers map to the condition names above and are shared by both models. Focus or select a point for exact paired values. Coincident points are grouped within a model; no jitter is added. Axes scale independently per panel.</p></article>`;
+    const summary = sets.map(({row}) => `${html(modelShort(row.model))} r = ${correlation(row.r)} · ${count(row.n_conditions)} beliefs`).join('<br>');
+    return `<article class="scatter-panel"><h4>${html(method)} · ${html(monitor)}</h4>${takeaway}<p class="association-summary">${summary}</p>${sets.map(({row}) => associationInference(row)).join('')}${all.length ? `${svg}<ol class="scatter-key">${order.map(id => `<li>${html(beliefLabel(id))}</li>`).join('')}</ol>` : '<p class="empty">No points available.</p>'}<p id="scatter-detail-${index}" class="scatter-detail" aria-live="polite">Select a point for its values.</p></article>`;
   }
 
   function renderAssociations() {
     const rows = selected(view()?.associations).filter(row => row.monitor === current().monitor).sort(modelOrder);
-    const constructs = {M1: 'verbalized evaluation awareness in recorded reasoning', M2: 'verbalized grader awareness in recorded reasoning (our reconstruction, not an official Anthropic detector)', M3: 'external transcript evaluation-likeness at an uncalibrated 0.85 threshold; this monitor can see the intervention itself and does not measure actor belief adoption'};
-    $('monitor-context').textContent = `${current().monitor}: ${constructs[current().monitor]}. Positive x means more monitor-positive results; positive y means a higher ${benchmark()?.metric || 'native score'}.`;
+    const constructs = {M1: 'reasoning mentions being evaluated', M2: 'reasoning mentions how it is graded', M3: 'a judge rates the transcript as evaluation-like'};
+    $('monitor-context').textContent = `${current().monitor}: ${constructs[current().monitor]}. x = change in monitor rate (pp); y = change in ${benchmark()?.metric || 'score'}.`;
     const panels = methods().map(method => [method, rows.filter(row => row.method === method)]).filter(([, group]) => group.length);
     $('association-panels').innerHTML = panels.length ? panels.map(([method, group], index) => scatter(method, group, index)).join('') : '<p class="empty">Association data unavailable for this selection.</p>';
     $('association-table').innerHTML = table(['Belief / method', 'Model', 'Monitor', 'Paired monitor shift', 'Paired behavior shift', 'Identical available pairs'], rows.flatMap(row => (row.points || []).map(point => [
@@ -530,7 +494,7 @@
 
   function renderG1() {
     const rows = selected(view()?.effects).filter(row => String(row.belief).toUpperCase() === 'G1' && ['neutral', 'information'].includes(row.reference)).sort((a, b) => a.method.localeCompare(b.method) || (a.reference === b.reference ? 0 : a.reference === 'neutral' ? -1 : 1));
-    methodForests('g1-chart', rows, row => `Concrete criterion determines score\n${row.reference} control`, 'Concrete-scoring-criterion effects relative to neutral and information controls');
+    methodForests('g1-chart', rows, row => `Concrete criterion\nvs ${row.reference} control`, 'Concrete criterion vs neutral and information controls');
     $('g1-table').innerHTML = effectTable(rows);
   }
 
@@ -540,85 +504,66 @@
     rows.forEach((row, position) => { if (!firstSeen.has(row.setting)) firstSeen.set(row.setting, position); });
     rows.sort((a, b) => firstSeen.get(a.setting) - firstSeen.get(b.setting) || modelOrder(a, b));
     const settings = new Map((DATA.settings || []).map(row => [row.id, row]));
-    $('level-table').innerHTML = table(['Setting', 'Model', 'Native mean', 'Scored / planned', 'M1 positive · known n', 'M2 positive · known n', 'M3 positive · known n'], rows.map(row => {
+    $('level-table').innerHTML = table(['Condition', 'Model', 'Mean score', 'Scored / planned', 'M1 rate · n', 'M2 rate · n', 'M3 rate · n'], rows.map(row => {
       const setting = settings.get(row.setting);
       const target = belief(setting?.belief)?.label;
       const references = [...new Set((setting?.reference_ids || []).map(id => belief(settings.get(id)?.belief)?.label).filter(Boolean))];
       const label = setting ? [target || (references.length ? `Reference for ${references.join('; ')}` : ''), setting.method, setting.control].filter(Boolean).join(' · ') : '';
       return [`${html(descriptiveText(label || 'Setting label unavailable'))}`, html(modelLabel(row.model)), current().benchmark === 'fortress' ? pp(row.mean) : percent(row.mean), `${count(row.n)} / ${count(row.planned)}`, ...['M1', 'M2', 'M3'].map(monitor => `${percent(row.monitors?.[monitor]?.rate)} · n=${count(row.monitors?.[monitor]?.n)}`)];
-    }), 'level-table', `${MODELS.map(modelLabel).join(' and ')} · ${benchmark()?.label} · all methods and controls · ${current().view} scoring`);
+    }), 'level-table', `${benchmark()?.label} · ${current().view} scoring`);
   }
 
   function renderSummary(differences) {
     const rows = effects();
-    const available = rows.filter(row => finite(row.estimate)).length;
     const split = (items, test) => MODELS.map(model => `${modelShort(model)} ${count(items.filter(row => row.model === model && test(row)).length)}`).join(' · ');
     $('answer-summary').innerHTML = [
-      [rows.filter(corrected).length, 'Corrected message effects', `${split(rows, corrected)}. ${available}/${rows.length} selected estimates available across both models; full 336-effect family.`],
-      [differences.significant.length, 'Direct message differences', `${split(differences.rows, corrected)}. Of ${differences.rows.length} selected comparisons; full 1,540-difference family.`],
-      [differences.supported.length, 'Supported reversals', `${split(differences.rows, reversal)}. ${differences.opposite.length} raw opposite-sign comparisons. Signs alone are not enough.`]
+      [rows.filter(isSignificant).length, 'Significant effects', split(rows, isSignificant)],
+      [differences.significant.length, 'Significant differences', split(differences.rows, isSignificant)],
+      [differences.supported.length, 'Reversals', split(differences.rows, reversal)]
     ].map(([value, label, detail]) => `<div class="summary-card"><strong>${count(value)}</strong><span>${html(label)}</span><p>${html(detail)}</p></div>`).join('');
   }
 
   function renderStatic() {
     const date = new Date(DATA.built_at);
-    $('snapshot').textContent = `Snapshot ${Number.isNaN(date.getTime()) ? (DATA.built_at || 'unknown') : `${date.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, ' UTC')}`} · sanitized aggregate results`;
+    $('snapshot').textContent = `Data snapshot: ${Number.isNaN(date.getTime()) ? (DATA.built_at || 'unknown') : date.toISOString().slice(0, 10)}`;
     $('coverage-table').innerHTML = table(['Model', 'Planned', 'Generated', 'Held', 'Actor-valid', 'Truncated', 'Original scored', 'Recovered scored', 'Original complete', 'Recovered complete', 'M1 known · original / recovered', 'M2 known · original / recovered', 'M3 known · original / recovered'], MODELS.map(id => {
       const row = DATA.coverage?.[id] || {};
       const completion = value => typeof value === 'boolean' ? (value ? 'Yes' : 'No') : count(value);
       return [html(DATA.models[id].label), ...['planned', 'generated', 'held', 'actor_valid', 'truncated', 'original_scored', 'scored'].map(key => count(row[key])), completion(row.original_complete), completion(row.complete), ...['M1_known', 'M2_known', 'M3_known'].map(key => `${count(row[`original_${key}`])} / ${count(row[key])}`)];
-    }), 'coverage-table', 'Complete = native score and all three monitor flags known. Truncated actor outputs are excluded, not repaired by scoring recovery.');
-    const recoveredCounts = Object.entries(DATA.recovery?.counts || {});
-    const totalRecovered = suffix => {
-      const values = recoveredCounts.filter(([key]) => suffix.test(key)).map(([, value]) => value).filter(finite);
-      return values.length ? values.reduce((sum, value) => sum + value, 0) : null;
-    };
-    $('recovery-note').textContent = `Recovery status: ${DATA.recovery?.status ?? 'unknown'} · version ${DATA.recovery?.version ?? 'unknown'} · ${count(totalRecovered(/:native_recovered$/))} native scores and ${count(totalRecovered(/:M[123]_recovered$/))} monitor measurements recovered · recorded recovery cost ${money(DATA.recovery?.cost_usd)}. Only valid original actor outputs are eligible; actor responses are not regenerated. Residual missingness remains explicit. Recovery metadata and source details are available below.`;
-    $('spending-note').textContent = `Recorded spend ${money(DATA.spending?.observed_cost_usd)} + unresolved reserve ${money(DATA.spending?.unresolved_reserved_usd)}; total cap ${money(DATA.spending?.total_cap_usd)}. Recorded cost and reserve are not invoice totals.`;
-    const exports = [['pooled', 'Pooled raw-p effects · CSV'], ['pooled_json', 'Pooled analysis · JSON'], ['json', 'All aggregate data · JSON'], ['effects', 'Secondary method-specific effects · CSV'], ['differences', 'Secondary belief differences · CSV'], ['associations', 'Secondary associations · CSV'], ['association_inference', 'P1/P2 association inference · JSON'], ['p3', 'P3 interim snapshot · JSON']];
+    }), 'coverage-table', 'Complete = score and all three monitor flags known.');
+    const exports = [['pooled', 'Pooled effects · CSV'], ['pooled_json', 'Pooled effects · JSON'], ['json', 'All data · JSON'], ['effects', 'Per-method effects · CSV'], ['differences', 'Differences · CSV'], ['associations', 'Associations · CSV'], ['association_inference', 'Association tests · JSON'], ['p3', 'P3 snapshot · JSON']];
     $('export-links').innerHTML = exports.map(([key, label]) => {
       const path = DATA.exports?.[key];
       // Download links must remain local aggregate artifacts, never script URLs.
       return typeof path === 'string' && /^study-data\/[a-zA-Z0-9._/-]+$/.test(path) && !path.split('/').includes('..') ? `<a href="${html(path)}" download>${html(label)}</a>` : `<span class="unknown">${html(label)} unavailable</span>`;
     }).join('');
-    $('methods-detail').innerHTML = metadata(DATA.statistics?.methods);
-    const {views: pooledViews, ...pooledSpecification} = DATA.pooled || {};
-    $('pooled-methods').innerHTML = DATA.pooled ? metadata(pooledSpecification) : '<p class="unknown">Pooled specification unavailable.</p>';
-    $('provenance-detail').innerHTML = `<h4>Source provenance</h4>${metadata(DATA.provenance)}<h4>Recovery metadata</h4>${metadata(DATA.recovery)}`;
-    $('metric-guide').innerHTML = table(['Benchmark', 'Native metric', 'Preferred direction', 'Positive Δ', 'Negative Δ', 'Scope'], BENCHMARKS.map(row => [html(row.label), html(row.metric), html(direction(row)), 'More of this metric', 'Less of this metric', html(row.category === 'Agentic capability' ? 'Agentic benign-task control' : row.category || 'Scope unspecified')]), '', 'Native metrics are not pooled or safety-normalized. Benign task performance is a control outcome, not a safety measure or broad agentic capability evidence.');
+    $('metric-guide').innerHTML = table(['Benchmark', 'Type', 'Metric', 'Better'], BENCHMARKS.map(row => [html(row.label), html(row.category === 'Agentic capability' ? 'Agentic benign-task control' : row.category || ''), html(row.metric), html(row.direction === 'higher' ? 'Higher' : row.direction === 'lower' ? 'Lower' : direction(row))]), 'guide-table');
   }
 
   function renderP3() {
     const snapshot = DATA.p3;
     const state = {benchmark: $('p3-benchmark-filter').value};
     const bench = BENCHMARKS.find(row => row.id === state.benchmark);
-    $('p3-snapshot').textContent = snapshot
-      ? `Saved P3 snapshot: ${snapshot.built_at || 'timestamp unavailable'}. Not live; no automatic refresh.`
-      : 'P3 aggregate snapshot unavailable. Missing progress and contrasts are not zero.';
-    $('p3-takeaway').innerHTML = takeawayBox([snapshot ? `This saved snapshot has ${count(snapshot.counts?.complete)} complete score-plus-monitor measurements out of ${count(snapshot.counts?.eligible)} eligible assignments. It is incomplete and descriptive: no reliable P3-versus-P1/P2 conclusion or significance claim follows from these rows yet.` : 'No P3 snapshot is available, so no P3 conclusion is supported.', 'P3 remains separate from the pooled P1/P2 results and the four-model balanced campaign. Missing or withheld outcomes are not zero effects.']);
-    $('p3-selection').textContent = `${MODELS.map(modelLabel).join(' and ')} · ${bench?.label || state.benchmark} · P3 recorded-only outcomes. Pooled and secondary P1/P2 controls do not apply. ${nativeContext(bench)}`;
+    $('p3-takeaway').innerHTML = takeawayBox([snapshot ? `${count(snapshot.counts?.complete)} of ${count(snapshot.counts?.eligible)} eligible assignments complete.` : 'No P3 snapshot available.']);
+    $('p3-selection').textContent = nativeContext(bench);
     const metrics = [['planned', 'Planned'], ['eligible', 'Eligible'], ['generated', 'Generated'], ['scored', 'Scored'], ['complete', 'Complete'], ['withheld', 'Held / withheld']];
     $('p3-counts').innerHTML = metrics.map(([key, label]) => `<div class="summary-card"><strong>${count(snapshot?.counts?.[key])}</strong><span>${label}</span></div>`).join('');
     $('p3-coverage').innerHTML = table(['Model', ...metrics.map(([, label]) => label), 'Awaiting generation', 'Awaiting measurement', 'Grading budget held'], Object.entries(snapshot?.coverage || {}).map(([model, row]) => [
       html(DATA.models[model]?.label || model), ...metrics.map(([key]) => count(row[key])), count(row.awaiting_generation), count(row.awaiting_measurement), count(row.grading_budget_held)
-    ]), 'coverage-table', 'P3 assignment-level coverage across all benchmarks; counts are not mutually exclusive stages.');
+    ]), 'coverage-table');
     const beliefRank = id => { const rank = BELIEFS.findIndex(target => target.id === id); return rank < 0 ? BELIEFS.length : rank; };
     const rows = (snapshot?.contrasts || []).filter(row => MODELS.includes(row.model) && row.benchmark === state.benchmark).sort((a, b) => beliefRank(a.belief) - beliefRank(b.belief) || modelOrder(a, b));
-    $('p3-contrasts').innerHTML = table(['Supplied condition · P3 vs matched neutral', 'Model', 'Descriptive native-score Δ', 'Scored pairs / eligible / planned', 'Observed clusters', ...['M1', 'M2', 'M3'].map(monitor => `${monitor}: monitor Δ / behavior Δ / identical pairs`)], rows.map(row => [
+    $('p3-contrasts').innerHTML = table(['Belief', 'Model', 'Δ', 'Scored / eligible / planned pairs', 'Clusters', ...['M1', 'M2', 'M3'].map(monitor => `${monitor}: monitor Δ / behavior Δ / pairs`)], rows.map(row => [
       html(beliefLabel(row.belief)), html(modelLabel(row.model)), pp(row.estimate, state.benchmark), `${count(row.n_pairs)} / ${count(row.n_eligible_pairs)} / ${count(row.n_planned_pairs)}`, count(row.n_clusters),
       ...['M1', 'M2', 'M3'].map(monitor => {
         const observation = row.monitors?.[monitor];
         return `${pp(observation?.estimate, 'monitor')} / ${pp(observation?.behavior_estimate, state.benchmark)} / ${count(observation?.n_pairs)}`;
       })
-    ]), 'p3-contrast-table', 'Interim complete-pair descriptions only: no confidence intervals, p-values, significance stars or correlation tests.');
-    $('p3-metadata').innerHTML = snapshot
-      ? `<h4>Saved output timestamps</h4>${metadata(snapshot.output_timestamps)}<h4>Exclusions and missing measurements</h4>${metadata(snapshot.exclusions)}<h4>Sanitized runtime snapshot</h4>${metadata(snapshot.runtime)}<h4>Recorded spending snapshot</h4>${metadata(snapshot.spending)}`
-      : '<p class="unknown">Snapshot metadata unavailable.</p>';
+    ]), 'p3-contrast-table');
   }
 
   function render() {
     const state = current();
-    $('selection-context').textContent = `${selectionLabel()} · matched neutral`;
     document.querySelectorAll('[data-sync-filter]').forEach(select => { select.value = $(select.dataset.syncFilter).value; });
     document.querySelectorAll('#effect-benchmark-tabs [role="tab"], #difference-benchmark-tabs [role="tab"]').forEach(tab => {
       const active = tab.dataset.benchmark === state.benchmark;
@@ -626,10 +571,6 @@
       tab.tabIndex = active ? 0 : -1;
       if (active) $(tab.getAttribute('aria-controls')).setAttribute('aria-labelledby', tab.id);
     });
-    $('view-note').textContent = state.view === 'recovered'
-      ? 'Recovered scoring view. This includes available recovered scores and monitor flags for eligible original actor outputs. It is not a new uniform-budget actor experiment. Compare original scoring to inspect sensitivity to scoring recovery; missing outcomes remain missing.'
-      : 'Original scoring view. Recovered values are not substituted. Original-budget truncation and missing scores can change which task pairs enter each estimate; these results condition on the observed complete pairs.';
-    if (!view()) $('view-note').textContent += ' No statistics are available for this view.';
     $('study-takeaway').innerHTML = overviewTakeaway((view()?.effects || []).filter(row => row.reference === 'neutral'));
     renderHeatmap();
     renderEffects();
