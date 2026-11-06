@@ -483,7 +483,7 @@
 
   function renderAssociations() {
     const rows = selected(view()?.associations).filter(row => row.monitor === current().monitor).sort(modelOrder);
-    const constructs = {M1: 'reasoning mentions being evaluated', M2: 'reasoning mentions how it is graded', M3: 'a judge rates the transcript as evaluation-like'};
+    const constructs = {M1: 'reasoning mentions being evaluated', M2: 'reasoning mentions how it is graded'};
     $('monitor-context').textContent = `${current().monitor}: ${constructs[current().monitor]}. x = change in monitor rate (pp); y = change in ${benchmark()?.metric || 'score'}.`;
     const panels = methods().map(method => [method, rows.filter(row => row.method === method)]).filter(([, group]) => group.length);
     $('association-panels').innerHTML = panels.length ? panels.map(([method, group], index) => scatter(method, group, index)).join('') : '<p class="empty">Association data unavailable for this selection.</p>';
@@ -504,12 +504,12 @@
     rows.forEach((row, position) => { if (!firstSeen.has(row.setting)) firstSeen.set(row.setting, position); });
     rows.sort((a, b) => firstSeen.get(a.setting) - firstSeen.get(b.setting) || modelOrder(a, b));
     const settings = new Map((DATA.settings || []).map(row => [row.id, row]));
-    $('level-table').innerHTML = table(['Condition', 'Model', 'Mean score', 'Scored / planned', 'M1 rate · n', 'M2 rate · n', 'M3 rate · n'], rows.map(row => {
+    $('level-table').innerHTML = table(['Condition', 'Model', 'Mean score', 'Scored / planned', 'M1 rate · n', 'M2 rate · n'], rows.map(row => {
       const setting = settings.get(row.setting);
       const target = belief(setting?.belief)?.label;
       const references = [...new Set((setting?.reference_ids || []).map(id => belief(settings.get(id)?.belief)?.label).filter(Boolean))];
       const label = setting ? [target || (references.length ? `Reference for ${references.join('; ')}` : ''), setting.method, setting.control].filter(Boolean).join(' · ') : '';
-      return [`${html(descriptiveText(label || 'Setting label unavailable'))}`, html(modelLabel(row.model)), current().benchmark === 'fortress' ? pp(row.mean) : percent(row.mean), `${count(row.n)} / ${count(row.planned)}`, ...['M1', 'M2', 'M3'].map(monitor => `${percent(row.monitors?.[monitor]?.rate)} · n=${count(row.monitors?.[monitor]?.n)}`)];
+      return [`${html(descriptiveText(label || 'Setting label unavailable'))}`, html(modelLabel(row.model)), current().benchmark === 'fortress' ? pp(row.mean) : percent(row.mean), `${count(row.n)} / ${count(row.planned)}`, ...['M1', 'M2'].map(monitor => `${percent(row.monitors?.[monitor]?.rate)} · n=${count(row.monitors?.[monitor]?.n)}`)];
     }), 'level-table', `${benchmark()?.label} · ${current().view} scoring`);
   }
 
@@ -526,11 +526,11 @@
   function renderStatic() {
     const date = new Date(DATA.built_at);
     $('snapshot').textContent = `Data snapshot: ${Number.isNaN(date.getTime()) ? (DATA.built_at || 'unknown') : date.toISOString().slice(0, 10)}`;
-    $('coverage-table').innerHTML = table(['Model', 'Planned', 'Generated', 'Held', 'Actor-valid', 'Truncated', 'Original scored', 'Recovered scored', 'Original complete', 'Recovered complete', 'M1 known · original / recovered', 'M2 known · original / recovered', 'M3 known · original / recovered'], MODELS.map(id => {
+    $('coverage-table').innerHTML = table(['Model', 'Planned', 'Generated', 'Held', 'Actor-valid', 'Truncated', 'Original scored', 'Recovered scored', 'Original complete', 'Recovered complete', 'M1 known · original / recovered', 'M2 known · original / recovered'], MODELS.map(id => {
       const row = DATA.coverage?.[id] || {};
       const completion = value => typeof value === 'boolean' ? (value ? 'Yes' : 'No') : count(value);
-      return [html(DATA.models[id].label), ...['planned', 'generated', 'held', 'actor_valid', 'truncated', 'original_scored', 'scored'].map(key => count(row[key])), completion(row.original_complete), completion(row.complete), ...['M1_known', 'M2_known', 'M3_known'].map(key => `${count(row[`original_${key}`])} / ${count(row[key])}`)];
-    }), 'coverage-table', 'Complete = score and all three monitor flags known.');
+      return [html(DATA.models[id].label), ...['planned', 'generated', 'held', 'actor_valid', 'truncated', 'original_scored', 'scored'].map(key => count(row[key])), completion(row.original_complete), completion(row.complete), ...['M1_known', 'M2_known'].map(key => `${count(row[`original_${key}`])} / ${count(row[key])}`)];
+    }), 'coverage-table', 'Complete = score and all monitor flags recorded.');
     const exports = [['pooled', 'Pooled effects · CSV'], ['pooled_json', 'Pooled effects · JSON'], ['json', 'All data · JSON'], ['effects', 'Per-method effects · CSV'], ['differences', 'Differences · CSV'], ['associations', 'Associations · CSV'], ['association_inference', 'Association tests · JSON']];
     $('export-links').innerHTML = exports.map(([key, label]) => {
       const path = DATA.exports?.[key];
