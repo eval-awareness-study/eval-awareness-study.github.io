@@ -121,11 +121,15 @@
     const tbTurns = new Set(run.tb_commit_turns);
     const firsts = run.highlights.map((h, index) => ({ ...h, index })).filter((h) => h.first);
     const items = firsts.map((h) => ({ turn: h.turn, at: h.start, html: `<li><button type="button" class="jump" data-target="hl-${h.index}">` +
-      `<span class="badge ${h.kind}">${h.kind}</span> Turn ${h.turn + 1}</button> “${esc(h.quote)}”</li>` }));
+      `<span class="badge ${h.kind}">${h.kind}</span> Turn ${h.turn + 1}</button>${h.line_cited ? ' <span class="badge muted" title="The judge cited this reasoning line by number; the highlight is the full line.">line-cited</span>' : ""} “${esc(h.quote)}”</li>` }));
     for (const t of run.tb_commit_turns) {
       items.push({ turn: t, at: Infinity, html: `<li><button type="button" class="jump" data-target="tb-${t}"><span class="badge tb">TB commit</span> Turn ${t + 1}</button> “add Terminal-Bench” appears in the output</li>` });
     }
     const where = items.sort((a, b) => a.turn - b.turn || a.at - b.at).map((x) => x.html);
+    for (const u of run.unlocated || []) {
+      const how = u.mode === "line_cited" && u.lines ? `judge cited reasoning line${u.lines.length > 1 ? "s" : ""} ${u.lines.join(", ")}` : `matched ${u.mode}`;
+      where.push(`<li class="unlocated"><span class="badge ${u.kind}">${u.kind}</span> <span class="badge muted">not verbatim · ${esc(how)}</span> “${esc(u.quote)}”</li>`);
+    }
     const factors = run.factors_on == null ? "released package" : run.factors_on.length ? run.factors_on.join(" ") : "none";
     const html = [
       `<header class="run-header"><p class="eyebrow">${esc(run.model_label)} · ${esc(LABEL[run.task] || run.task)} · ${esc(CONDITION(run.condition))}</p>`,
