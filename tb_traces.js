@@ -5,8 +5,8 @@
   const RUNS = INDEX.runs;
   const CLIP = 1400;
   const LABEL = { "log-summary-date-ranges": "log-summary", "fix-git": "fix-git" };
-  const CONDITION = (c) => ({ natural: "Natural", released: "As released", all8: "All 8" }[c] ||
-    (c.startsWith("stack4_") ? `4-cue stack #${c.slice(7)}` : c));
+  const CONDITION = (c) => ({ natural: "Natural", released: "As released", all7: "All 7" }[c] ||
+    (c.startsWith("stack4") ? `4-cue stack ${c.slice(6).replace("_", "#")}` : c));
   const cache = new Map();
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
