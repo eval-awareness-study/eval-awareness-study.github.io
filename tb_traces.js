@@ -16,6 +16,9 @@
     return b.eval && b.grader ? "both" : b.eval ? "eval" : "grader";
   }
 
+  const MODEL_COLOUR = { qwen38: "#176a60", flint: "#ae5a22", gemma4: "#27679b" };
+  const modelBadge = (r) => `<span class="badge model" style="border-color:${MODEL_COLOUR[r.model] || "#596969"};color:${MODEL_COLOUR[r.model] || "#596969"}">${esc(r.model_label)}</span>`;
+
   function badgeHtml(b, group) {
     const out = [];
     if (group === "comparison") out.push('<span class="badge muted">not aware</span>');
@@ -31,16 +34,18 @@
 
   // ---------------------------------------------------------------- sidebar
   function fillFilters() {
+    const models = [...new Map(RUNS.map((r) => [r.model, r.model_label]))];
     const tasks = [...new Set(RUNS.map((r) => r.task))];
     const conditions = [...new Set(RUNS.map((r) => r.condition))];
+    $("f-model").insertAdjacentHTML("beforeend", models.map(([m, l]) => `<option value="${esc(m)}">${esc(l)}</option>`).join(""));
     $("f-task").insertAdjacentHTML("beforeend", tasks.map((t) => `<option value="${esc(t)}">${esc(LABEL[t] || t)}</option>`).join(""));
     $("f-condition").insertAdjacentHTML("beforeend", conditions.map((c) => `<option value="${esc(c)}">${esc(CONDITION(c))}</option>`).join(""));
-    for (const id of ["f-task", "f-condition", "f-aware", "f-type"]) $(id).addEventListener("change", renderList);
+    for (const id of ["f-model", "f-task", "f-condition", "f-aware", "f-type"]) $(id).addEventListener("change", renderList);
   }
 
   function renderList() {
-    const task = $("f-task").value, condition = $("f-condition").value, aware = $("f-aware").value, type = $("f-type").value;
-    const shown = RUNS.filter((r) => (!task || r.task === task) && (!condition || r.condition === condition) &&
+    const model = $("f-model").value, task = $("f-task").value, condition = $("f-condition").value, aware = $("f-aware").value, type = $("f-type").value;
+    const shown = RUNS.filter((r) => (!model || r.model === model) && (!task || r.task === task) && (!condition || r.condition === condition) &&
       (!aware || awareness(r.badges) === aware) && (!type || r.badges.type === type));
     $("run-count").textContent = `${shown.length} of ${RUNS.length} runs`;
     const html = [];
@@ -50,11 +55,11 @@
         group = r.group; heading = null;
         html.push(`<h2 class="run-group">${group === "aware" ? "Aware runs" : "Comparison: not aware"}</h2>`);
       }
-      const h = `${LABEL[r.task] || r.task} · ${CONDITION(r.condition)}`;
+      const h = `${r.model_label} · ${LABEL[r.task] || r.task} · ${CONDITION(r.condition)}`;
       if (h !== heading) { heading = h; html.push(`<h3 class="run-heading">${esc(h)}</h3>`); }
       html.push(`<a class="run-item" href="#run=${encodeURIComponent(r.id)}" data-id="${esc(r.id)}">` +
         `<span class="run-name">${esc(r.trial)}<span class="fine"> · ${esc(r.scaffold)}${r.tb_commit ? " · TB commit" : ""}</span></span>` +
-        `<span class="badges">${badgeHtml(r.badges, r.group)}</span></a>`);
+        `<span class="badges">${modelBadge(r)}${badgeHtml(r.badges, r.group)}</span></a>`);
     }
     if (!shown.length) html.push('<p class="empty">No runs match these filters.</p>');
     $("run-list").innerHTML = html.join("");
@@ -123,10 +128,10 @@
     const where = items.sort((a, b) => a.turn - b.turn || a.at - b.at).map((x) => x.html);
     const factors = run.factors_on == null ? "released package" : run.factors_on.length ? run.factors_on.join(" ") : "none";
     const html = [
-      `<header class="run-header"><p class="eyebrow">${esc(LABEL[run.task] || run.task)} · ${esc(CONDITION(run.condition))}</p>`,
+      `<header class="run-header"><p class="eyebrow">${esc(run.model_label)} · ${esc(LABEL[run.task] || run.task)} · ${esc(CONDITION(run.condition))}</p>`,
       `<h2>${esc(run.trial)}</h2>`,
       `<p class="fine">Harness ${esc(run.scaffold)} · host <code>${esc(run.hostname)}</code> · factors on: ${esc(factors)} · ${esc(run.history_note)}</p>`,
-      `<p class="badges">${badgeHtml(run.badges, run.group)}</p></header>`,
+      `<p class="badges">${modelBadge(run)}${badgeHtml(run.badges, run.group)}</p></header>`,
       `<div class="where"><h3>Where awareness appears</h3>${where.length ? `<ol>${where.join("")}</ol>` : '<p class="fine">The monitor found no awareness in this run.</p>'}</div>`,
     ];
     for (const p of run.preamble) {

@@ -59,7 +59,12 @@
 .bar-chart { display: block; width: 100%; max-width: 600px; height: auto; }
 .bar-chart g:hover .row-label { fill: var(--teal); }
 .attribution-chart .bar-chart { max-width: 520px; }
-.pass-table { max-width: 420px; font-size: 12.5px; }
+.pass-table { font-size: 12.5px; }
+.pass-table .task-head { text-align: center; border-bottom: 1px solid var(--line); }
+.chart-grid.three { grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 14px 22px; }
+.task-row { margin: 10px 0 18px; }
+.task-row h4 { font: 600 14px/1.4 ui-sans-serif, system-ui, sans-serif; margin: 12px 0 6px; }
+.unscored-swatch { background: repeating-linear-gradient(45deg, #eceee9 0 3px, #b9c1bb 3px 5px); }
 .pass-table th, .pass-table td { padding: 5px 10px; }
 .pass-table td.short { color: var(--orange); font-weight: 600; }
 .followup-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 18px 28px; }
