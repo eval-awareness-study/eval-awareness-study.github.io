@@ -53,26 +53,34 @@
 .setup-list dt { font-weight: 700; color: var(--teal); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; }
 .setup-list dd { margin: 3px 0 0; }
 .chart-panel figcaption { font: 600 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink); }
-/* Results: one section per model, overlapping bars in shades of the model hue (--hue). */
-.m1 { fill: var(--hue); background: var(--hue); }
-.m2 { fill: color-mix(in srgb, var(--hue) 62%, var(--paper)); background: color-mix(in srgb, var(--hue) 62%, var(--paper)); }
-.m3 { fill: color-mix(in srgb, var(--hue) 36%, var(--paper)); background: color-mix(in srgb, var(--hue) 36%, var(--paper)); }
-.m4 { fill: color-mix(in srgb, var(--hue) 17%, var(--paper)); background: color-mix(in srgb, var(--hue) 17%, var(--paper)); }
+/* Results: one section per model; each setting is a group of four bars, one colour per measure. */
+.tb-case { --ms-spont: var(--teal); --ms-open: color-mix(in srgb, var(--orange) 58%, var(--paper));
+  --ms-rating: color-mix(in srgb, var(--blue) 50%, var(--paper)); --ms-mcq: color-mix(in srgb, #75468f 42%, var(--paper)); }
+.ms-spont { fill: var(--ms-spont); background: var(--ms-spont); }
+.ms-open { fill: var(--ms-open); background: var(--ms-open); }
+.ms-rating { fill: var(--ms-rating); background: var(--ms-rating); }
+.ms-mcq { fill: var(--ms-mcq); background: var(--ms-mcq); }
 .res-legend { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 6px 22px; margin: 14px 0 6px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 5px; background: var(--wash); font: 13px/1.5 ui-sans-serif, system-ui, sans-serif; }
 .res-legend p { display: flex; gap: 8px; align-items: baseline; margin: 0; }
-.sw { flex: none; display: inline-block; width: 22px; height: 11px; border-radius: 2px; border: 1px solid color-mix(in srgb, var(--hue) 40%, var(--paper)); }
-.sw.hatched { background: repeating-linear-gradient(45deg, color-mix(in srgb, var(--hue) 62%, var(--paper)) 0 3px, var(--paper) 3px 5px); }
+.res-legend .legend-lead { grid-column: 1 / -1; font-weight: 600; }
+.sw { flex: none; display: inline-block; width: 22px; height: 10px; border-radius: 2px; }
+.sw.ms-spont { height: 13px; }
+.sw.hatched { background: repeating-linear-gradient(45deg, var(--ms-open) 0 3px, var(--paper) 3px 5px); }
 .model-result { margin: 26px 0 0; padding: 18px 0 0; border-top: 0; }
 .model-result + .model-result { border-top: 1px solid var(--line); }
-.model-result h3 { margin: 0 0 4px; color: var(--hue); }
+.model-result h3 { margin: 0 0 4px; }
 .model-takeaway { font-size: 16px; line-height: 1.55; max-width: 860px; margin: 0 0 10px; }
-.res-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 12px 36px; }
-.res-chart { display: block; width: 100%; max-width: 640px; height: auto; }
+.res-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr)); gap: 12px 36px; }
+.res-chart { display: block; width: 100%; max-width: 660px; height: auto; }
+.res-chart .group-band { fill: var(--wash); }
 .res-chart .row-hit { fill: transparent; }
-.res-chart .res-row:hover .row-hit, .res-chart .res-row:focus .row-hit, .res-chart .res-row.active .row-hit { fill: var(--wash); }
+.res-chart .res-row:hover .row-hit, .res-chart .res-row:focus .row-hit, .res-chart .res-row.active .row-hit { fill: color-mix(in srgb, var(--teal) 8%, transparent); }
 .res-chart .res-row:focus { outline: none; }
 .res-chart .res-row:focus .row-label { text-decoration: underline; }
+.res-chart .value-label { font-size: 10px; fill: var(--muted); }
+.res-chart .value-label.value-spont { fill: var(--ink); font-weight: 700; }
 .res-chart .pass-label { font-size: 10px; fill: #8d9998; }
+.res-chart .pass-label.warn { fill: var(--orange); }
 .res-notes { display: grid; gap: 4px; font: 12px/1.6 ui-sans-serif, system-ui, sans-serif; color: var(--muted); margin: 6px 0 0; }
 .res-notes span { display: flex; gap: 8px; align-items: baseline; }
 .numbers { margin: 6px 0 0; padding: 8px 0; }
