@@ -83,6 +83,15 @@
 .res-chart .pass-label.warn { fill: var(--orange); }
 .res-notes { display: grid; gap: 4px; font: 12px/1.6 ui-sans-serif, system-ui, sans-serif; color: var(--muted); margin: 6px 0 0; }
 .res-notes span { display: flex; gap: 8px; align-items: baseline; }
+.whitebox { margin: 18px 0 0; padding: 14px 0 0; border-top: 1px dashed var(--line); }
+.whitebox h4 { font: 600 16px/1.4 ui-sans-serif, system-ui, sans-serif; margin: 0 0 6px; }
+.res-chart .wb-head { font-size: 10.5px; font-weight: 700; fill: var(--ink); }
+.res-chart .wb-bar { fill: color-mix(in srgb, var(--ink) 45%, var(--paper)); }
+.res-chart .wb-sd { stroke: var(--ink); stroke-width: 1; fill: none; }
+.res-chart .wb-threshold { stroke: var(--orange); stroke-width: 1.2; stroke-dasharray: 3 2; }
+.res-chart .wb-thr-label { font-size: 8.5px; fill: var(--orange); }
+.wb-notes { font: 13.5px/1.6 ui-sans-serif, system-ui, sans-serif; max-width: 980px; padding-left: 20px; margin: 10px 0 0; }
+.wb-notes li { margin-bottom: 6px; }
 .numbers { margin: 6px 0 0; padding: 8px 0; }
 .numbers-table { font-size: 12px; min-width: 620px; }
 .numbers-table th, .numbers-table td { padding: 4px 8px; }
