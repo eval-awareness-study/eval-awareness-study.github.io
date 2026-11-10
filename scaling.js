@@ -1,6 +1,6 @@
 "use strict";
-// Scaling page: chart-point tooltips, the tier tabs of the Figures block, the current section highlighted in the table
-// of contents, and every <details> opened for printing.
+// Scaling page: chart-point tooltips, the task-set tabs of the figures, and every <details> and tab opened for
+// printing.
 (() => {
   const tip = document.createElement("div");
   tip.className = "sc-tip";
@@ -28,18 +28,17 @@
     tip.hidden = true;
   }
 
-  for (const pt of document.querySelectorAll(".sc-svg .pt")) {
-    pt.querySelector("title")?.remove(); // the custom tooltip replaces the native one
+  for (const pt of document.querySelectorAll("[data-tip]")) {
     pt.addEventListener("pointermove", (e) => { if (e.pointerType === "mouse") show(pt, e.clientX, e.clientY); });
     pt.addEventListener("pointerleave", (e) => { if (e.pointerType === "mouse") hide(); });
     pt.addEventListener("click", (e) => (active === pt && e.pointerType !== "mouse" ? hide() : show(pt, e.clientX, e.clientY)));
     pt.addEventListener("focus", () => { const r = pt.getBoundingClientRect(); show(pt, r.right, r.bottom); });
     pt.addEventListener("blur", hide);
   }
-  document.addEventListener("click", (e) => { if (!e.target.closest(".sc-svg .pt")) hide(); });
+  document.addEventListener("click", (e) => { if (!e.target.closest("[data-tip]")) hide(); });
   window.addEventListener("scroll", () => { if (active && document.activeElement !== active) hide(); }, { passive: true });
 
-  // Figures: tier tabs (without JS every tier shows under its own heading).
+  // Figures: task-set tabs (without JS every task set shows under its own heading).
   for (const list of document.querySelectorAll(".sc-tabs")) {
     const buttons = [...list.querySelectorAll("[role=tab]")];
     const panels = buttons.map((b) => document.getElementById(b.getAttribute("aria-controls")));
@@ -60,25 +59,7 @@
     select(0, false);
   }
 
-  // Table of contents: mark the link of the last heading scrolled past.
-  const links = new Map([...document.querySelectorAll(".sc-toc a[href^='#']")].map((a) => [a.hash.slice(1), a]));
-  const targets = [...links.keys()].map((id) => document.getElementById(id)).filter(Boolean);
-  let current = null;
-  function spy() {
-    let found = targets[0];
-    for (const t of targets) if (t.getBoundingClientRect().top < 120) found = t;
-    const link = found && links.get(found.id);
-    if (link === current) return;
-    current?.removeAttribute("aria-current");
-    link?.setAttribute("aria-current", "true");
-    current = link;
-  }
-  if (targets.length) {
-    spy();
-    window.addEventListener("scroll", () => requestAnimationFrame(spy), { passive: true });
-  }
-
-  // Print everything: open collapsed fit tables and every tier tab while printing, then restore them.
+  // Print everything: open collapsed tables and every task-set tab while printing, then restore them.
   let closed = [];
   let hiddenTabs = [];
   window.addEventListener("beforeprint", () => {
