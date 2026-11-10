@@ -1,6 +1,6 @@
 "use strict";
-// Scaling page: chart-point tooltips, the current section highlighted in the table of contents, and every
-// <details> opened for printing.
+// Scaling page: chart-point tooltips, the tier tabs of the Figures block, the current section highlighted in the table
+// of contents, and every <details> opened for printing.
 (() => {
   const tip = document.createElement("div");
   tip.className = "sc-tip";
@@ -39,6 +39,27 @@
   document.addEventListener("click", (e) => { if (!e.target.closest(".sc-svg .pt")) hide(); });
   window.addEventListener("scroll", () => { if (active && document.activeElement !== active) hide(); }, { passive: true });
 
+  // Figures: tier tabs (without JS every tier shows under its own heading).
+  for (const list of document.querySelectorAll(".sc-tabs")) {
+    const buttons = [...list.querySelectorAll("[role=tab]")];
+    const panels = buttons.map((b) => document.getElementById(b.getAttribute("aria-controls")));
+    const select = (i, focus) => {
+      buttons.forEach((b, j) => { b.setAttribute("aria-selected", String(i === j)); b.tabIndex = i === j ? 0 : -1; });
+      panels.forEach((p, j) => { p.hidden = i !== j; });
+      if (focus) buttons[i].focus();
+      hide();
+    };
+    buttons.forEach((b, i) => {
+      b.addEventListener("click", () => select(i, false));
+      b.addEventListener("keydown", (e) => {
+        const step = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+        if (step) { e.preventDefault(); select((i + step + buttons.length) % buttons.length, true); }
+      });
+    });
+    list.hidden = false;
+    select(0, false);
+  }
+
   // Table of contents: mark the link of the last heading scrolled past.
   const links = new Map([...document.querySelectorAll(".sc-toc a[href^='#']")].map((a) => [a.hash.slice(1), a]));
   const targets = [...links.keys()].map((id) => document.getElementById(id)).filter(Boolean);
@@ -57,11 +78,19 @@
     window.addEventListener("scroll", () => requestAnimationFrame(spy), { passive: true });
   }
 
-  // Print everything: open collapsed fit tables while printing, then restore them.
+  // Print everything: open collapsed fit tables and every tier tab while printing, then restore them.
   let closed = [];
+  let hiddenTabs = [];
   window.addEventListener("beforeprint", () => {
     closed = [...document.querySelectorAll("details:not([open])")];
     for (const d of closed) d.open = true;
+    hiddenTabs = [...document.querySelectorAll(".sc-tabpanel[hidden]")];
+    for (const p of hiddenTabs) p.hidden = false;
   });
-  window.addEventListener("afterprint", () => { for (const d of closed) d.open = false; closed = []; });
+  window.addEventListener("afterprint", () => {
+    for (const d of closed) d.open = false;
+    for (const p of hiddenTabs) p.hidden = true;
+    closed = [];
+    hiddenTabs = [];
+  });
 })();
