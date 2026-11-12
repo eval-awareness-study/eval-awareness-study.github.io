@@ -86,6 +86,16 @@
 .c-pending { background: #f6f7f3; color: var(--muted); }
 .sc-grid-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; list-style: none; padding: 0; margin: 6px 0 0; font: 14px/1.5 var(--sans); color: #364646; }
 .sc-grid-legend li { display: inline-flex; align-items: center; gap: 7px; }
+
+/* Key patterns */
+.sc-patterns tbody th { min-width: 200px; }
+.sc-patterns thead tr + tr th small { display: block; font-size: 11.5px; font-weight: 400; color: var(--muted); }
+.sc-patterns td { min-width: 58px; height: 44px; font-size: 15px; color: #2a2a26; }
+.sc-patterns td.kp-flat { color: #4c5b5b; }
+.kp-ramp { display: inline-block; width: 96px; height: 12px; border-radius: 2px; border: 1px solid var(--line); vertical-align: -1px; }
+.kp-key { background: #eba574; color: #2a2a26; }
+.kp-key.kp-pale { background: #f2d3bb; }
+.sc-takeaways { margin-top: 14px; max-width: 1000px; }
 .c-key { display: inline-grid; place-items: center; min-width: 30px; height: 22px; padding: 0 3px; font-style: normal; font-size: 13px; border-radius: 3px; }
 
 /* Tables */
