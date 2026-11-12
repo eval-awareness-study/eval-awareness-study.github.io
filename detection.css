@@ -1,0 +1,22 @@
+/* Detection-methods page; shared tokens and base styles come from study.css. */
+.det { max-width: 1060px; }
+.det header { max-width: 900px; margin-bottom: 40px; }
+.det .lead { font-size: 18px; }
+.det-takeaways { margin: 22px 0 0; padding-left: 20px; font-size: 16px; line-height: 1.6; }
+.det-takeaways li { margin-bottom: 9px; }
+.det section { margin: 0 0 48px; }
+.det h3 { font-size: 20px; margin: 26px 0 4px; }
+.det h4 { font: 600 14px ui-sans-serif, system-ui, sans-serif; margin: 20px 0 0; }
+.det-table { border-collapse: collapse; font: 13px/1.4 ui-sans-serif, system-ui, sans-serif; }
+.det-table th, .det-table td { padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.det-table thead th { font-weight: 600; color: var(--muted); }
+.det-table tbody th { font-weight: 600; }
+.det-table td { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.det-table.methods td { white-space: normal; }
+.det-table .sub { display: block; font-weight: 400; font-size: 11px; color: var(--muted); }
+.det-table .ci { font-size: 11px; color: var(--muted); }
+.det-table td.best { font-weight: 700; background: var(--wash); }
+.det-table tr.baseline th, .det-table tr.baseline td { color: var(--muted); font-style: italic; }
+.det-details { margin: 28px 0 18px; }
+.det-details > summary { font-size: 15px; color: var(--teal); }
+@media (max-width: 600px) { .det-table { font-size: 12px; } .det-table th, .det-table td { padding: 5px 6px; } }
