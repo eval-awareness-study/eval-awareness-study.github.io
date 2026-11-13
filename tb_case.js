@@ -38,3 +38,15 @@
   document.addEventListener("click", (e) => { if (!e.target.closest(".res-row")) hide(); });
   window.addEventListener("scroll", () => { if (active && document.activeElement !== active) hide(); }, { passive: true });
 })();
+
+// A link into the collapsed Details block (for example #results) opens it before scrolling there.
+(() => {
+  function reveal() {
+    const target = location.hash.length > 1 && document.getElementById(location.hash.slice(1));
+    if (!target) return;
+    for (let block = target.closest("details"); block; block = block.parentElement.closest("details")) block.open = true;
+    target.scrollIntoView();
+  }
+  window.addEventListener("hashchange", reveal);
+  reveal();
+})();

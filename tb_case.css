@@ -6,6 +6,20 @@
 .tb-case figure { margin: 0; }
 .tb-case figcaption { font: 600 12px/1.5 ui-sans-serif, system-ui, sans-serif; color: var(--muted); margin-bottom: 8px; }
 .tb-case code { font: .88em ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap: anywhere; }
+/* Main view: one sentence, key points, key plots; everything else sits in the collapsed Details block. */
+#key-points, #key-plots { margin-top: 30px; padding-top: 24px; }
+.tb-key-points { max-width: 1000px; margin: 14px 0 0; padding: 16px 22px 8px 42px; border-left: 5px solid var(--teal); background: var(--wash); font: 16.5px/1.6 ui-sans-serif, system-ui, sans-serif; }
+.tb-key-points li { margin-bottom: 9px; }
+.model-legend { margin: 14px 0 0; font-size: 13px; }
+.tb-case .key-plot { margin: 20px 0 0; }
+.tb-case .key-plot figcaption { font: 13px/1.55 ui-sans-serif, system-ui, sans-serif; margin: 6px 0 0; max-width: 860px; }
+.key-plot .sw { margin-right: 2px; }
+.md-qwen { fill: var(--teal); background: var(--teal); }
+.md-flint { fill: var(--orange); background: var(--orange); }
+.md-gemma { fill: var(--blue); background: var(--blue); }
+.rd-probe { fill: color-mix(in srgb, var(--ink) 62%, var(--paper)); background: color-mix(in srgb, var(--ink) 62%, var(--paper)); }
+.tb-details { font: inherit; margin: 44px 0 0; padding: 12px 0; }
+.tb-details > summary { font: 600 19px/1.5 ui-sans-serif, system-ui, sans-serif; color: var(--ink); padding: 6px 0; }
 .diagram { margin: 22px 0 26px !important; }
 .diagram svg { display: block; width: 100%; height: auto; }
 .diagram-tall { display: none !important; max-width: 420px; margin: 0 auto; }
@@ -106,6 +120,17 @@
 .takeaways li { margin-bottom: 12px; }
 .caveats { font: 14px/1.7 ui-sans-serif, system-ui, sans-serif; color: var(--muted); }
 .caveats li { margin-bottom: 4px; }
+/* Key plots reuse the results-chart parts; wide = tasks side by side, tall = stacked (narrow screens). */
+.key-chart.key-wide { max-width: none; }
+.key-chart.key-tall { display: none; max-width: 520px; }
+.key-chart.key-single { max-width: 480px; }
+.key-chart .panel-title { font: 600 12px ui-monospace, SFMono-Regular, Menlo, monospace; fill: var(--ink); }
+.key-chart .row-label { font-size: 11px; }
+.key-chart .value-label { font-size: 9.5px; }
+@media (max-width: 900px) {
+  .key-chart.key-wide { display: none; }
+  .key-chart.key-tall { display: block; }
+}
 @media (max-width: 700px) {
   .diagram-wide { display: none !important; }
   .diagram-tall { display: block !important; }
