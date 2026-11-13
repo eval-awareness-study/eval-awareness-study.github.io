@@ -96,6 +96,13 @@
 .kp-key { background: #eba574; color: #2a2a26; }
 .kp-key.kp-pale { background: #f2d3bb; }
 .sc-takeaways { margin-top: 14px; max-width: 1000px; }
+
+/* Main view: headline figure and the one Details block */
+.sc-headline { max-width: 640px; }
+.sc-headline-key { margin: 4px 0 6px; }
+.sc-details { margin-top: 34px; border-top: 1px solid var(--line); padding-top: 12px; }
+.sc-details > summary { font: 600 19px/1.5 var(--sans); color: var(--ink); cursor: pointer; padding: 6px 0; }
+.sc-details[open] > summary { margin-bottom: 10px; }
 .c-key { display: inline-grid; place-items: center; min-width: 30px; height: 22px; padding: 0 3px; font-style: normal; font-size: 13px; border-radius: 3px; }
 
 /* Tables */
