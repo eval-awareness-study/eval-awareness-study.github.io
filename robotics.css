@@ -1,32 +1,48 @@
 /* Robotics pilot page; shared tokens and base styles come from study.css. */
 .rob { max-width: 980px; }
-.rob header { max-width: 900px; margin-bottom: 40px; }
-.rob .subtitle { font: 15px/1.5 ui-sans-serif, system-ui, sans-serif; color: var(--muted); }
-.rob-takeaways { margin: 22px 0 0; padding-left: 20px; font-size: 17px; line-height: 1.6; }
+.rob header { max-width: 900px; }
+.rob h2 { margin-bottom: 16px; }
+.rob-takeaways { margin: 0; padding-left: 20px; font-size: 17px; line-height: 1.6; max-width: 820px; }
 .rob-takeaways li { margin-bottom: 8px; }
-.rob section { margin: 0 0 52px; }
 .rob .fine { font: 13px/1.55 ui-sans-serif, system-ui, sans-serif; color: var(--muted); }
-.rob-chart { max-width: 780px; font: 12px ui-sans-serif, system-ui, sans-serif; }
+.rob-plots { display: grid; grid-template-columns: minmax(0, 1fr); gap: 30px 44px; align-items: start; }
+.rob-plots figure { margin: 0; max-width: 520px; }
+.rob-plots figcaption { font: 13px/1.5 ui-sans-serif, system-ui, sans-serif; color: var(--muted); margin-bottom: 8px; }
+.rob-chart { display: block; width: 100%; height: auto; font: 12px ui-sans-serif, system-ui, sans-serif; }
 .rob-chart .row-label { fill: var(--ink); font-weight: 600; font-size: 13px; }
-.rob-chart .row-sub, .rob-chart .tick { fill: var(--muted); font-size: 11px; }
+.rob-chart .row-sub, .rob-chart .tick { fill: var(--muted); font-weight: 400; font-size: 11px; }
 .rob-chart .val { fill: var(--ink); font-size: 11px; }
-.rob .legend { display: flex; gap: 18px; font: 12px ui-sans-serif, system-ui, sans-serif; color: var(--muted); margin: 6px 0 10px; }
+.rob-chart .track { fill: var(--wash); }
+.rob .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font: 12px ui-sans-serif, system-ui, sans-serif; color: var(--muted); margin: 0 0 18px; }
 .rob .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .rob .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 2px; }
+.rob-details { margin-top: 44px; }
+.rob-details h3 { margin: 26px 0 8px; }
 .rob-table { border-collapse: collapse; font: 13px/1.4 ui-sans-serif, system-ui, sans-serif; margin-top: 10px; }
 .rob-table th, .rob-table td { padding: 6px 10px; border-bottom: 1px solid var(--line); text-align: left; }
 .rob-table thead th { font-weight: 600; color: var(--muted); }
 .rob-table .number { text-align: right; font-variant-numeric: tabular-nums; }
 .rob-table .c-rel { color: var(--blue); font-weight: 500; font-size: 11px; }
 .rob-table .c-nd { color: var(--orange); font-weight: 500; font-size: 11px; }
-.rob .tag { font-size: 10px; color: var(--muted); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; }
+.rob .tag { font-size: 10px; font-weight: 400; color: var(--muted); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; }
 .rob-quotes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 14px; }
-.rob-quote { margin: 0; padding: 12px 14px; border-left: 3px solid var(--blue); background: var(--wash); border-radius: 0 4px 4px 0; }
+.rob-quote { padding: 12px 14px; border-left: 3px solid var(--blue); background: var(--wash); border-radius: 0 4px 4px 0; }
 .rob-quote.nodisclose { border-left-color: var(--orange); }
 .rob-quote blockquote { margin: 0 0 8px; font-size: 15px; line-height: 1.55; }
-.rob-quote figcaption { font: 12px ui-sans-serif, system-ui, sans-serif; color: var(--muted); }
+.rob-quote p { margin: 0; font: 12px ui-sans-serif, system-ui, sans-serif; color: var(--muted); }
 .rob .setup-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 10px; margin: 14px 0 0; font: 13px/1.55 ui-sans-serif, system-ui, sans-serif; }
 .rob .setup-list > div { padding: 10px 12px; background: var(--wash); border-radius: 5px; }
 .rob .setup-list dt { font-weight: 700; color: var(--teal); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
 .rob .setup-list dd { margin: 3px 0 0; }
-@media (max-width: 600px) { .rob-table { font-size: 12px; } .rob-table th, .rob-table td { padding: 5px 6px; } }
+/* Desktop: by-measure and evidence plots stack on the left, the taller by-model plot sits on the right. */
+@media (min-width: 761px) {
+  .rob-plots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rob-plots figure:nth-child(2) { grid-row: span 2; }
+}
+@media (max-width: 600px) {
+  .rob-table { font-size: 12px; }
+  .rob-table th, .rob-table td { padding: 5px 6px; }
+  /* The SVG scales down with the viewport; larger user-unit type keeps labels legible. */
+  .rob-chart .row-label { font-size: 16px; }
+  .rob-chart .row-sub, .rob-chart .tick, .rob-chart .val { font-size: 14px; }
+}
