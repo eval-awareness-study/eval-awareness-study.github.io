@@ -1,4 +1,4 @@
-// Hover, tap and keyboard details for chart marks carrying data-tip.
+// Hover, tap and keyboard details for chart marks carrying data-tip; view switches for multi-view figures.
 (() => {
   const tip = document.createElement("div");
   tip.className = "bp-tip";
@@ -52,3 +52,13 @@
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") hide(); });
   window.addEventListener("scroll", () => { if (!tip.hidden) hide(); }, { passive: true });
 })();
+
+document.querySelectorAll(".bp-switch").forEach((group) => {
+  const figure = group.closest("figure");
+  group.addEventListener("click", (e) => {
+    const button = e.target.closest("button[data-view]");
+    if (!button) return;
+    group.querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b === button)));
+    figure.querySelectorAll(".bp-view").forEach((v) => { v.hidden = v.dataset.view !== button.dataset.view; });
+  });
+});

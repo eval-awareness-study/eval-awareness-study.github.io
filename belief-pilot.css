@@ -1,4 +1,4 @@
-/* Belief study v4 pilot page; shared tokens and base styles come from study.css. */
+/* Belief study page (belief-pilot.html); shared tokens and base styles come from study.css. */
 .bp { max-width: 1000px; }
 .bp header { max-width: 900px; margin-bottom: 36px; }
 .bp .subtitle { font: 15px/1.5 ui-sans-serif, system-ui, sans-serif; color: var(--muted); }
@@ -75,3 +75,20 @@
 .bp-details > summary { font-size: 16px; }
 .bp-details h3 { margin-top: 30px; }
 .bp .lead .bp-status { display: inline-block; margin-top: 8px; font-size: 12px; }
+.bp-chart .col-label { fill: var(--ink); font-size: 12px; font-weight: 600; }
+.bp-chart.compact .col-label { font-size: 11px; }
+.bp-chart .cell { font-size: 15px; font-variant-numeric: tabular-nums; }
+.bp-chart.compact .cell { font-size: 12.5px; }
+.bp-chart .cell-ci { font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.bp-chart .row-label.ref { fill: var(--muted); font-style: italic; font-weight: 500; }
+.bp-chart [data-tip]:hover rect, .bp-chart [data-tip]:hover circle { filter: brightness(1.05); }
+.bp-panels { display: flex; flex-wrap: wrap; gap: 12px 0; }
+.bp-chart.panel { flex: 1 1 340px; max-width: 430px; }
+.bp-switch { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 10px; }
+.bp-switch button { font: 600 12px/1.4 ui-sans-serif, system-ui, sans-serif; padding: 4px 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); color: var(--muted); cursor: pointer; }
+.bp-switch button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.bp .legend svg { flex: none; }
+.bp h4 { font: 700 15px/1.4 ui-sans-serif, system-ui, sans-serif; margin: 22px 0 6px; }
+.bp h4 .bp-badge { margin-left: 6px; vertical-align: 1px; }
+.bp-armlist { list-style: none; margin: 0; padding: 0; }
+.bp-armlist li { margin: 2px 0; }
