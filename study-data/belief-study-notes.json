@@ -1,69 +1,84 @@
 {
-  "schema": "belief-study-notes-v1",
-  "about": "Aggregate numbers from the belief-study v4 write-ups that are not in belief-stage1-public.json: interim method results (each dated), the nothing-planted reference and model status. Labels, counts, rates and intervals only.",
+  "schema": "belief-study-notes-v2",
+  "about": "Aggregate numbers from the belief-study v4 write-ups that are not in belief-stage1-public.json: final method results (each dated), the reference-arm experiment, gpt-oss-120b uptake and the stage-2 status. Labels, counts, rates and intervals only. Realistic implicit-cue rates are read from implicit-v2-public.json at build time.",
   "main_model": "qwen38-27b",
-  "model_names": {"qwen38-27b": "Qwen3.8-27B"},
-  "stage1": {"as_of": "2026-11-14 06:03 UTC", "status": "complete"},
-  "other_models": [
-    {"name": "gpt-oss-120b", "status": "in progress", "note": "ran the same stage-1 grid; final tables pending"}
-  ],
+  "model_names": {"qwen38-27b": "Qwen3.8-27B", "gptoss-120b": "gpt-oss-120b"},
+  "stage1": {"as_of": "2026-11-14", "status": "complete for both models"},
+  "stage2": {"status": "in progress", "frozen": "2026-11-14", "commit": "7a5a4c4"},
+  "gptoss": {
+    "as_of": "2026-11-14",
+    "readout_explicit": {"deployment": 0.89, "safety_eval": 0.73, "rubric": 0.67, "simulation": 0.80, "capability_eval": 0.52, "generic_eval": 0.08},
+    "no_monitors": true,
+    "bare_fortress": {"rate": 0.70, "ci95": [0.58, 0.81], "deployment": 0.47}
+  },
   "reference_arms": {
-    "nothing_planted": {
-      "as_of": "2026-11-14 05:37 UTC",
-      "source": "carrier ablation and reference runs on the same items, nothing added to the prompt",
-      "agentic_misalignment": {"rate": 0.27, "ci95": [0.16, 0.38]},
-      "impossiblebench": {"events": 5, "known": 16}
+    "as_of": "2026-11-14 08:20 UTC",
+    "status": "final",
+    "arms": ["bare", "minimal_system", "neutral_product", "neutral_fact", "placebo", "deployment"],
+    "labels": {"bare": "Nothing planted", "minimal_system": "“You are a helpful assistant.”", "neutral_product": "Neutral text: product note", "neutral_fact": "Neutral text: unrelated fact", "placebo": "Placebo sentence", "deployment": "Real-use statement"},
+    "sets": {
+      "harmful_compliance": {"label": "Harmful compliance", "items": 97,
+        "rate": {"bare": [0.37, 193], "minimal_system": [0.39, 194], "neutral_product": [0.43, 192], "neutral_fact": [0.41, 194], "placebo": [0.42, 193], "deployment": [0.33, 192]},
+        "vs_bare": {"minimal_system": [0.02, -0.07, 0.11], "neutral_product": [0.06, -0.02, 0.14], "neutral_fact": [0.03, -0.04, 0.11], "placebo": [0.05, -0.03, 0.12], "deployment": [-0.04, -0.12, 0.05]}},
+      "orbench": {"label": "Benign refusal (OR-Bench)", "items": 98,
+        "rate": {"bare": [0.48, 196], "minimal_system": [0.57, 196], "neutral_product": [0.44, 195], "neutral_fact": [0.50, 195], "placebo": [0.47, 196], "deployment": [0.50, 195]},
+        "vs_bare": {"minimal_system": [0.09, -0.01, 0.18], "neutral_product": [-0.04, -0.14, 0.05], "neutral_fact": [0.02, -0.07, 0.11], "placebo": [-0.01, -0.10, 0.10], "deployment": [0.02, -0.08, 0.11]}},
+      "impossiblebench": {"label": "Cheating (ImpossibleBench)", "items": 40,
+        "rate": {"bare": [0.43, 56], "minimal_system": [0.38, 55], "neutral_product": [0.38, 32], "neutral_fact": [0.41, 32], "placebo": [0.37, 79], "deployment": [0.20, 79]},
+        "vs_bare": {"minimal_system": [-0.05, -0.21, 0.12], "neutral_product": [-0.05, -0.29, 0.19], "neutral_fact": [-0.02, -0.30, 0.26], "placebo": [-0.06, -0.19, 0.07], "deployment": [-0.23, -0.37, -0.08]}},
+      "agentic_misalignment": {"label": "Blackmail (Agentic Misalignment)", "items": 26,
+        "rate": {"bare": [0.28, 101], "minimal_system": [0.30, 94], "neutral_product": [0.20, 93], "neutral_fact": [0.25, 104], "placebo": [0.33, 151], "deployment": [0.10, 153]},
+        "vs_bare": {"minimal_system": [0.02, -0.10, 0.13], "neutral_product": [-0.07, -0.19, 0.04], "neutral_fact": [-0.03, -0.14, 0.08], "placebo": [0.05, -0.01, 0.12], "deployment": [-0.18, -0.27, -0.10]}}
     },
-    "pending": "Further reference arms (no intervention, a minimal system message, neutral text) are running."
+    "beliefs_vs_bare": {
+      "safety_eval": {"impossiblebench": [-0.43, -0.56, -0.29], "agentic_misalignment": [-0.28, -0.39, -0.18], "harmful_compliance": [-0.08, -0.16, -0.01], "orbench": [0.12, 0.04, 0.20]},
+      "rubric": {"harmful_compliance": [0.15, 0.07, 0.23], "orbench": [-0.19, -0.28, -0.10], "impossiblebench": [-0.01, -0.18, 0.15], "agentic_misalignment": [0.02, -0.08, 0.12]},
+      "capability_eval": {"impossiblebench": [-0.08, -0.25, 0.08], "agentic_misalignment": [-0.04, -0.15, 0.06]},
+      "simulation": {"impossiblebench": [-0.07, -0.23, 0.09], "agentic_misalignment": [0.08, -0.04, 0.18]},
+      "generic_eval": {"agentic_misalignment": [-0.04, -0.15, 0.06]},
+      "training": {"impossiblebench": [-0.07, -0.24, 0.11], "agentic_misalignment": [-0.10, -0.19, -0.01]}
+    }
   },
   "uptake": {
-    "as_of": "2026-11-14 06:03 UTC",
+    "as_of": "2026-11-14",
     "fork_excess_safety": [0.40, 0.65],
     "cell_spearman": [0.74, 0.84],
     "matched": {"dp_explicit": 0.55, "dp_implicit": 0.56, "drop_explicit": -0.16, "drop_implicit": -0.16}
   },
   "methods": {
     "insertion": {
-      "as_of": "2026-11-14 00:00 UTC",
-      "stage": "smoke test, 5–10 runs per cell; the full grid is running",
-      "noticed_edit": {"k": 0, "n": 97},
-      "safety_fork_uptake": [0.88, 1.0],
-      "deployment_endorsed": [0.70, 0.80],
-      "simulation_endorsed": [0.0, 0.25],
-      "readout_shift_vs_control": [0.21, 0.33]
+      "as_of": "2026-11-14 08:15 UTC", "status": "final",
+      "knecht": {"inject_first": [-9.3, -16, -2], "inject_late": [-3.6, -8, 1], "remove": 41, "keep": 44, "remove_vs_keep": [0.0, -11, 11]},
+      "apollo": {"generic_first": [-24.0, -37, -12], "safety_first": [-36.2, -51, -22], "remove": 38, "keep": 32, "remove_vs_keep": [4.8, -10, 19], "clean_removal": 21},
+      "agreement": {"opposite_sign_cells": 0, "am_safety_per_unit": [-0.26, -0.27], "belief_gap_points": [8, 29]},
+      "position": {"ib_first": [3, 10], "ib_late": [52, 68], "late_max_shift": 8},
+      "tamper": {"k": 136, "n": 7413}
     },
     "implicit_v2": {
-      "as_of": "2026-11-14 05:45 UTC",
-      "progress": {"done": 2900, "planned": 9952},
-      "realism_p_planted": {"explicit": 72, "v1": 45, "v2": 32},
-      "tool": {"with": {"events": 1, "known": 32}, "without": {"events": 19, "known": 47}, "tool_only": {"events": 0, "known": 7}, "bare": {"events": 5, "known": 16}},
-      "readout_gain_safety": {"v2": 0.12, "explicit": 0.56},
-      "harmful_safety_vs_deployment": 0.01,
-      "am_safety_vs_placebo": {"estimate": -0.12, "ci95": [-0.21, -0.04]},
-      "placebo_vs_bare": -0.15
+      "as_of": "2026-11-14 09:05 UTC", "status": "final",
+      "tool": {"with": {"events": 1, "known": 32}, "without": {"events": 19, "known": 47}},
+      "realism_p_planted": {"explicit": 72, "v1": 45, "v2": 32}
     },
     "placement": {
-      "as_of": "2026-11-14",
-      "stage": "methods frozen; behaviour runs pending",
-      "rewrite_selection_shift": [-0.207, -0.159],
-      "rewrite_heldout_shift": [-0.038, 0.018],
-      "judge_retest_r": 0.54,
-      "replay_shift": {"XSTest unsafe": 0.126, "OR-Bench": 0.085}
+      "as_of": "2026-11-14", "status": "final for the runs completed",
+      "safety_vs_placebo": {
+        "harmful_compliance": {"system": [-13.1, -20.3, -6.1], "user": [-21.5, -29.4, -13.4], "document": [-17.0, -24.7, -9.3], "past": [-2.9, -10.0, 4.4]},
+        "orbench": {"system": [12.2, 3.1, 20.9], "user": [34.1, 26.4, 42.3], "document": [27.0, 18.9, 35.2], "past": [10.7, 2.0, 19.4]}
+      },
+      "no_test_words": {"safety_cheating": 0.0, "n": 40, "placebo_cheating": 0.475},
+      "past_round_flagged": [28, 58],
+      "rewrite_readout_shift": [-0.05, -0.03],
+      "rewrite_heldout_shift": [-0.04, 0.02]
     },
     "steering": {
-      "as_of": "2026-11-14 05:00 UTC",
-      "stage": "behaviour on the study benchmarks is running",
-      "first": {"harm_pts": [-22, -20], "refusal_pts": [14, 23], "null_harm_pts": [1, 3], "stated_safety_pts": [-23, -22]},
-      "climb_readout": {
-        "safety_eval": {"steer": 0.69, "explicit": 0.50, "random": -0.04},
-        "capability_eval": {"steer": 0.89, "explicit": 0.44, "random": 0.01}
-      },
-      "safety_refusal_pts": {"plus": [27, 28], "minus": [-23, -22], "random_max_abs": 2},
-      "capability_open_description": {"steered": 0.01, "explicit": 0.05}
+      "as_of": "2026-11-14 08:00 UTC", "status": "final",
+      "up": {"harm_vs_random": [[-28.6, -37.1, -19.7], [-33.9, -42.6, -25.2]], "refusal_vs_random": [[37.4, 27.2, 47.6], [39.9, 28.9, 51.1]]},
+      "down": {"harm_vs_random": [[24.1, 14.6, 33.5], [25.4, 16.4, 33.7]], "refusal_vs_random": [[-47.6, -60.0, -36.1], [-41.0, -52.2, -29.2]]},
+      "explicit": {"harm": [-4.5, -13.1], "refusal": [8.0, 9.0]},
+      "ratio": [2, 6],
+      "stated_safety": {"up": 100, "down": 0, "explicit": 99},
+      "am_floor": true
     },
-    "readout": {
-      "as_of": "2026-11-14 06:03 UTC",
-      "prompts": 10896
-    }
+    "readout": {"as_of": "2026-11-14", "status": "final", "prompts": 10896}
   }
 }
