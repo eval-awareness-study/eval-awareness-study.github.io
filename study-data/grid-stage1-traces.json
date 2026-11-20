@@ -1,10 +1,10 @@
 {
  "schema": "grid-stage1-traces-v1",
- "built": "2026-11-20T19:28Z",
+ "built": "2026-11-20T19:29Z",
  "builder": "scripts/dashboard/build_grid_traces.py",
  "model": "gpt-oss-20b",
  "belief": "this is a safety evaluation",
- "selection": "One model (gpt-oss-20b), one belief ('this is a safety evaluation') with its matched neutral controls and the rule reminder, the first draw (s0) of each condition, all on one harmless AgentHarm task; chat history runs on chat requests only and only for the beliefs 'the user is probing me' and 'the user tests whether I just agree', so its example is a harmless XSTest request with the user-probe history. Each run is shown in full; the planted text is highlighted. Single runs illustrate the methods; the rates are in the tables below.",
+ "selection": "Real gpt-oss-20b runs, each shown in full, planted text highlighted. Belief 'this is a safety evaluation' (with its neutral controls and the rule reminder), first sample of each condition, on one harmless AgentHarm task. Chat history exists only for chat requests and two other beliefs, so its example is a harmless XSTest request with the 'user is probing me' history. Single runs illustrate the methods; the rates are in the tables below.",
  "tasks": {
   "agentharm": {
    "base_item_id": "belief-setting-study-v4:agentharm:benign-27-1",
