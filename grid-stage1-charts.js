@@ -45,7 +45,7 @@
 .gs1c-legend .gs1c-sw.gs1c-ref { width: 18px; height: 0; border-top: 2px dashed ${C.ink}; border-radius: 0; }
 .gs1c-legend .gs1c-ramp { display: inline-grid; grid-template-columns: auto auto auto; align-items: center; column-gap: 6px; }
 .gs1c-legend .gs1c-ramp-title { grid-column: 1 / -1; color: ${C.ink}; font-weight: 600; }
-.gs1c-legend .gs1c-ramp-bar { position: relative; width: 150px; height: 10px; border-radius: 2px; margin-bottom: 14px; }
+.gs1c-legend .gs1c-ramp-bar { position: relative; width: min(150px, 30vw); height: 10px; border-radius: 2px; margin-bottom: 14px; }
 .gs1c-legend .gs1c-ramp-tk { position: absolute; top: 11px; transform: translateX(-50%); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .gs1c-legend .gs1c-ramp-end { font-size: 11px; margin-bottom: 14px; white-space: nowrap; }
 .gs1c-legend .gs1c-mk { font-size: 14px; line-height: 1; }
@@ -373,7 +373,7 @@
     const gridX = labelW;
     const showVals = s.showValues === undefined ? cellW >= 34 : !!s.showValues && cellW >= 22;
     const baseH = narrow ? 24 : 28, groupH = narrow ? 22 : 26;
-    const rowWraps = new Map(rows.map(r => [r.key, wrap(r.label, labelW - 12, fs, 500, 3)]));
+    const rowWraps = new Map(rows.map(r => [r.key, wrap(r.label, labelW - 12, fs, 500, 6)]));
     let H = headH + 4;
     for (const it of layout) H += it.group ? groupH : Math.max(baseH, rowWraps.get(it.row.key).lines.length * lh + 7);
 
@@ -516,7 +516,7 @@
     const x0 = labelW, x1 = W - valW;
     const X = v => x0 + (clamp(v, dmin, dmax) - dmin) / (dmax - dmin || 1) * (x1 - x0);
     const lh = fs + 3, barH = narrow ? 14 : 16;
-    const wraps = items.map(it => wrap(it.label, labelW - 10, fs, 500, 2));
+    const wraps = items.map(it => wrap(it.label, labelW - 10, fs, 500, 6));
     const top = ref && ref.label ? fs + 8 : 4;
     let H = top;
     const hs = wraps.map(w => Math.max(narrow ? 26 : 30, w.lines.length * lh + 8));
@@ -568,7 +568,8 @@
       const lg = s.legend || {};
       const box = html('div', 'gs1c-legend', root);
       const kinds = lg.kinds || {};
-      for (const k of Object.keys(kinds)) legendItem(box, '', kinds[k], `background:${KIND[k] || kindIdx.get(k) || C.teal}`);
+      const present = new Set(items.map(it => it.kind));
+      for (const k of Object.keys(kinds)) if (present.has(k)) legendItem(box, '', kinds[k], `background:${KIND[k] || kindIdx.get(k) || C.teal}`);
       if (items.some(it => finite(it.lo) && finite(it.hi))) legendItem(box, 'ci', lg.interval || 'Line: 95% interval');
       if (ref && lg.ref) legendItem(box, 'ref', lg.ref);
       if (items.some(it => it.sig)) legendItem(box, 'sig', lg.sig || 'Significant');
@@ -599,8 +600,8 @@
     const L = rows.map(r => {
       const missing = !finite(r.ours);
       const note = r.note || (missing ? 'Not reproduced' : '');
-      const lab = wrap(r.label, textMax, fs, 600, 2);
-      const noteLines = note ? wrap(note, textMax, fs - 1, 400, missing ? 3 : 2) : {lines: [], cut: false};
+      const lab = wrap(r.label, textMax, fs, 600, 6);
+      const noteLines = note ? wrap(note, textMax, fs - 1, 400, 8) : {lines: [], cut: false};
       const textH = lab.lines.length * lh + noteLines.lines.length * (lh - 1);
       const h = narrow ? textH + strip + 10 : Math.max(textH, strip) + 16;
       return {lab, note, missing, noteLines, h, textH};
