@@ -32,6 +32,7 @@
 .gs1c [data-gs1c-tip]:hover .gs1c-ring { stroke: ${C.ink}; stroke-width: 1.5; }
 .gs1c [data-gs1c-tip]:focus-visible .gs1c-ring { stroke: ${C.ink}; stroke-width: 2.5; stroke-dasharray: 3 2; }
 .gs1c .gs1c-rowlab.hl, .gs1c .gs1c-collab.hl { font-weight: 700; fill: ${C.ink}; }
+.gs1c .gs1c-halo { paint-order: stroke; stroke: ${C.paper}; stroke-width: 3px; stroke-linejoin: round; }
 .gs1c .gs1c-collab.link { cursor: pointer; text-decoration: underline; text-decoration-color: #b9c3bf; }
 .gs1c .gs1c-collab.link:hover, .gs1c .gs1c-collab.link:focus-visible { fill: ${C.teal}; outline: none; }
 .gs1c-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; margin: 8px 0 0; font: 12px/1.4 ${FONT}; color: ${C.muted}; }
@@ -611,11 +612,11 @@
       const {lab, note, missing, noteLines, h, textH} = L[i];
       if (i) el('line', {x1: 0, x2: W, y1: y, y2: y, stroke: C.line, 'stroke-width': 0.7}, svg);
       const ty = narrow ? y + 6 + fs * 0.9 : y + h / 2 - textH / 2 + fs * 0.9;
-      const t = el('text', {x: 0, y: ty, 'font-size': fs, 'font-weight': 600, fill: C.ink}, svg);
+      const t = el('text', {x: 0, y: ty, 'font-size': fs, 'font-weight': 600, fill: C.ink, class: 'gs1c-halo'}, svg);
       lab.lines.forEach((ln, k) => el('tspan', {x: 0, dy: k ? lh : 0}, t, ln));
       if (lab.cut) el('title', null, t, r.label);
       if (noteLines.lines.length) {
-        const nt = el('text', {x: 0, y: ty + lab.lines.length * lh - 1, 'font-size': fs - 1, fill: C.muted, 'font-style': missing ? 'italic' : 'normal'}, svg);
+        const nt = el('text', {x: 0, y: ty + lab.lines.length * lh - 1, 'font-size': fs - 1, fill: C.muted, 'font-style': missing ? 'italic' : 'normal', class: 'gs1c-halo'}, svg);
         noteLines.lines.forEach((ln, k) => el('tspan', {x: 0, dy: k ? lh - 1 : 0}, nt, ln));
         if (noteLines.cut) el('title', null, nt, note);
       }

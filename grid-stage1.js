@@ -97,7 +97,8 @@
     sel.value = value;
   }
   const legend = b => ({title: 'Difference from the matched neutral control (points)', low: ENDS[b] ? ENDS[b][0] : 'lower',
-    high: ENDS[b] ? ENDS[b][1] : 'higher', sig: 'Significant (nominal p < .05)', na: 'Not run'});
+    high: ENDS[b] ? ENDS[b][1] : 'higher', sig: 'Significant = nominal p < 0.05, uncorrected, up to 50 tasks × 2 samples',
+    na: 'Not run'});
 
   // ---- overview: beliefs x models ----
   fill($('o-bench'), D.outcomes.map(o => [o[0], o[1]]), 'agentharm_harmless');
@@ -159,8 +160,9 @@
       if (lines.length === 3) break;
     }
     $('m-take').innerHTML = lines.map(l => `<li>${l}</li>`).join('');
-    $('m-sig').innerHTML = sig.slice(0, 8).map(r => `<li>${effect(r, r.method === 'longRa')} ` +
-      `<span class="sub">[${pts(r.lo)}, ${pts(r.hi)}], ${r.tasks} tasks${r.poor_fit ? '; text a poor fit' : ''}</span></li>`).join('')
+    $('m-sig').innerHTML = sig.slice(0, 8).map(r => `<li><span class="gs-label sig">Significant</span> ` +
+      `${effect(r, r.method === 'longRa')} <span class="sub">[${pts(r.lo)}, ${pts(r.hi)}], p ${pfmt(r.p)}, ` +
+      `${r.tasks} tasks${r.poor_fit ? '; text a poor fit' : ''}</span></li>`).join('')
       || '<li class="sub">none</li>';
     // base rates
     const base = D.outcomes.map(o => D.base.find(x => x.model === m && x.bench === o[0])).filter(Boolean);
