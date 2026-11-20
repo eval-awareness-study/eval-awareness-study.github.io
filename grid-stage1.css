@@ -57,3 +57,48 @@
 .gs-verdicts > li { margin-bottom: 10px; }
 .gs-verdicts ul { margin: 4px 0; padding-left: 20px; }
 .gs-verdicts .sub { display: block; font-size: 13px; color: var(--muted); }
+
+/* ---- summary page (grid-stage1.html) ---- */
+.gsm { font-family: ui-sans-serif, system-ui, sans-serif; }
+.gsm-sub { font: 15px/1.5 ui-sans-serif, system-ui, sans-serif; color: var(--muted); margin: 0 0 10px; }
+.gsm-take { font: 17px/1.5 ui-sans-serif, system-ui, sans-serif; margin: 6px 0 10px; padding-left: 26px; max-width: 1060px; }
+.gsm-take li { margin: 0 0 6px; padding-left: 2px; }
+.gsm-take b { color: var(--teal); }
+.gsm-explore { font: 14px/1.5 ui-sans-serif, system-ui, sans-serif; color: var(--muted); background: var(--wash); border-left: 3px solid var(--orange); padding: 6px 10px; margin: 0 0 18px; max-width: 1040px; }
+.gsm-explore b { color: var(--ink); }
+.gsm section { margin-top: 26px; }
+.gsm h2 { margin-bottom: 8px; }
+.gsm h3 { font: 600 15px/1.4 ui-sans-serif, system-ui, sans-serif; margin: 14px 0 6px; }
+.gsm h3 .sub, .gsm .sub { font-weight: 400; color: var(--muted); font-size: 13px; }
+.gsm-controls { display: flex; flex-wrap: wrap; gap: 8px 18px; margin: 6px 0 10px; font-size: 13px; }
+.gsm-controls label { display: flex; flex-direction: column; gap: 3px; color: var(--muted); font-weight: 600; font-size: 12px; }
+.gsm-controls select { min-height: 36px; min-width: 240px; max-width: calc(100vw - 40px); font: 14px ui-sans-serif, system-ui, sans-serif; padding: 4px 6px; border: 1px solid var(--line); border-radius: 4px; background: #fff; color: var(--ink); }
+.gsm-heat { min-height: 120px; max-width: 100%; }
+.gsm-legend, .gsm-note { font: 13px/1.5 ui-sans-serif, system-ui, sans-serif; color: var(--muted); margin: 6px 0; max-width: 1040px; }
+.gsm-empty { padding: 10px 14px; background: var(--wash); border-radius: 4px; font-size: 14px; }
+.gsm-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 10px; }
+.gsm-tabs button { font: 600 13px ui-sans-serif, system-ui, sans-serif; padding: 7px 11px; min-height: 36px; border: 1px solid var(--line); border-radius: 18px; background: #fff; color: var(--ink); cursor: pointer; }
+.gsm-tabs button[aria-selected="true"] { background: var(--teal); border-color: var(--teal); color: #fff; }
+.gsm-mtake { font: 15px/1.5 ui-sans-serif, system-ui, sans-serif; padding-left: 20px; margin: 4px 0 8px; }
+.gsm-mtake b, .gsm-sig b { color: var(--teal); }
+.gsm-two { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 10px 28px; align-items: start; }
+.gsm-sig { font: 14px/1.45 ui-sans-serif, system-ui, sans-serif; padding-left: 22px; margin: 0; }
+.gsm-sig li { margin-bottom: 4px; }
+.gsm-three { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px 26px; }
+.gsm-three figure { margin: 0; }
+.gsm-three figcaption { font: 600 14px/1.4 ui-sans-serif, system-ui, sans-serif; margin-bottom: 6px; }
+#more details { margin: 6px 0; }
+@media (max-width: 760px) { .gsm-two { grid-template-columns: 1fr; } .gsm-take { font-size: 15px; padding-left: 20px; } }
+/* fallback heat map (only when grid-stage1-charts.js is missing) */
+.gsm-ftable { border-collapse: collapse; font-size: 12px; }
+.gsm-ftable th, .gsm-ftable td { border: 1px solid #fff; padding: 3px 5px; }
+.gsm-ftable td { min-width: 44px; text-align: center; font-variant-numeric: tabular-nums; }
+.gsm-ftable td.sig { outline: 2px solid var(--ink); outline-offset: -2px; font-weight: 700; }
+.gsm-ftable td.na { background: repeating-linear-gradient(45deg, #ecece8, #ecece8 3px, #f7f7f4 3px, #f7f7f4 6px); }
+.gsm-ftable th[scope="row"] { text-align: left; font-weight: 500; min-width: 160px; }
+.gsm-ftable thead th { font-weight: 600; cursor: pointer; }
+.gsm-ftable tr.grp th { text-align: left; color: var(--muted); font-size: 11px; text-transform: uppercase; padding-top: 8px; }
+.gsm-fbars div { display: flex; align-items: center; gap: 6px; font-size: 12px; margin: 2px 0; }
+.gsm-fbars span:first-child { width: 170px; flex: none; }
+.gsm-fbars .bar { height: 10px; background: var(--blue); }
+.gsm-mname { font-size: 20px; margin: 6px 0 2px; }
