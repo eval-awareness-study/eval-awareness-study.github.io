@@ -367,5 +367,61 @@
     "Harm causal test: removing the whole harm subspace damages the model (real tool calls 0.93 → 0.12), so that run is not interpreted; a smaller removal that keeps the model working is running, verdict later today.",
     "Measurement: a free-text question makes 'capability purpose' measurable (+0.35 [+0.15, +0.55]); 'consequences' is still not measurable.",
     "Per-belief matched pairs for all 17 beliefs are written; per-belief directions run tonight."
+  ],
+  "repro_forest": [
+    {
+      "study": "Garg et al. (system-prompt note that this is a safety evaluation)",
+      "label": "Garg et al.: safety-evaluation note, refusal of harmful requests (Qwen3-32B)",
+      "published": 10.6,
+      "ours": 11.1,
+      "lo": 7.0,
+      "hi": 15.6,
+      "note": ""
+    },
+    {
+      "study": "Knecht et al. (awareness sentence inserted one third into the reasoning)",
+      "label": "Knecht et al.: awareness sentence in the reasoning, safe answers (Qwen3-32B)",
+      "published": 8.5,
+      "ours": 8.7,
+      "lo": 7.0,
+      "hi": 10.5,
+      "note": ""
+    },
+    {
+      "study": "Fan et al. (evaluation system prompt and reasoning prefix)",
+      "label": "Fan et al.: evaluation system prompt, safe answers (QwQ-32B)",
+      "published": 31.0,
+      "ours": 27.7,
+      "lo": 19.9,
+      "hi": 35.5,
+      "note": ""
+    },
+    {
+      "study": "Zhuang & Aranguri (capability- against safety-flavoured framing)",
+      "label": "Zhuang & Aranguri: capability- vs safety-flavoured framing, refusals (Qwen3-32B, grid pool)",
+      "published": -21.9,
+      "ours": -25.9,
+      "lo": -34.0,
+      "hi": -17.9,
+      "note": ""
+    },
+    {
+      "study": "Niblett et al. 2026 (compliance gap with an evaluation notice)",
+      "label": "Niblett et al.: evaluation notice, violations (gpt-4o)",
+      "published": null,
+      "ours": null,
+      "lo": null,
+      "hi": null,
+      "note": "reproduced: 13 of 100 violations without the notice, 0 of 100 with it, as published"
+    },
+    {
+      "study": "Lynch et al. 2025 ('real or test' deliberation on blackmail), pilot",
+      "label": "Lynch et al.: 'real or test' deliberation, blackmail (GPT-6.2 Sol, GPT-6.1 Terra)",
+      "published": null,
+      "ours": null,
+      "lo": null,
+      "hi": null,
+      "note": "not testable: 0 of 50 blackmail in every cell"
+    }
   ]
 }

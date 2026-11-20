@@ -347,30 +347,33 @@
     const labelW = Math.round(Math.min(maxLab + 14, narrow ? Math.max(104, W * 0.36) : Math.min(270, W * 0.3)));
     const maxCell = s.maxCellWidth || 120;
     let cellW = clamp((W - labelW - 2) / Math.max(1, cols.length), 12, maxCell);
-    // Column header: horizontal (wrapped, 2 lines) if it fits, else rotated (-45 on wide, -90 on narrow).
+    // Column header, never truncated: horizontal (wrapped, up to 3 lines) if every label fits its cell, else rotated
+    // full labels (-45 on wide screens, -90 on narrow ones or when the -45 lean would squeeze cells too much).
     const lh = fs + 3;
-    let headMode = 'h', colWraps = cols.map(c => wrap(c.label, cellW - 6, fs, 600, 2));
+    let headMode = 'h', colWraps = cols.map(c => wrap(c.label, cellW - 6, fs, 600, 3));
     if (colWraps.some(w => w.cut)) headMode = narrow ? 'v' : 'd';
     let headH, rightPad = 0;
-    const maxColTxt = narrow ? 150 : 170;
-    const colTxt = cols.map(c => ellipsize(c.label, maxColTxt, fs, 600));
+    const colTxt = cols.map(c => c.label);
     if (headMode === 'h') headH = Math.max(...colWraps.map(w => w.lines.length)) * lh + 8;
     else {
       const ws = colTxt.map(t => textW(t, fs, 600));
       if (headMode === 'd') {
         const k = Math.SQRT1_2;
         // Rotated labels lean right; shrink cells so the last ones stay inside the width.
-        for (let pass = 0; pass < 2; pass++) {
-          rightPad = Math.max(0, ...ws.map((w, i) => w * k - (cols.length - 1 - i) * cellW - cellW / 2 + 4));
-          cellW = clamp((W - labelW - 2 - rightPad) / Math.max(1, cols.length), 12, maxCell);
+        let w2 = cellW;
+        for (let pass = 0; pass < 3; pass++) {
+          rightPad = Math.max(0, ...ws.map((w, i) => w * k - (cols.length - 1 - i) * w2 - w2 / 2 + 4));
+          w2 = clamp((W - labelW - 2 - rightPad) / Math.max(1, cols.length), 12, maxCell);
         }
-        headH = Math.max(...ws) * k + fs + 8;
-      } else headH = Math.max(...ws) + 10;
+        if (w2 >= 30) { cellW = w2; headH = Math.max(...ws) * k + fs + 8; }
+        else { headMode = 'v'; rightPad = 0; }
+      }
+      if (headMode === 'v') headH = Math.max(...ws) + 10;
     }
     const gridX = labelW;
     const showVals = s.showValues === undefined ? cellW >= 34 : !!s.showValues && cellW >= 22;
     const baseH = narrow ? 24 : 28, groupH = narrow ? 22 : 26;
-    const rowWraps = new Map(rows.map(r => [r.key, wrap(r.label, labelW - 12, fs, 500, 2)]));
+    const rowWraps = new Map(rows.map(r => [r.key, wrap(r.label, labelW - 12, fs, 500, 3)]));
     let H = headH + 4;
     for (const it of layout) H += it.group ? groupH : Math.max(baseH, rowWraps.get(it.row.key).lines.length * lh + 7);
 
@@ -394,7 +397,6 @@
         const rot = headMode === 'd' ? -45 : -90;
         t = el('text', {x: cx + (headMode === 'v' ? fs / 3 : 0), y: headH - 6, transform: `rotate(${rot} ${cx + (headMode === 'v' ? fs / 3 : 0)} ${headH - 6})`, 'font-size': fs, 'font-weight': 600, fill: C.ink, class: 'gs1c-collab'}, svg, colTxt[ci]);
       }
-      if (colTxt[ci] !== c.label || colWraps[ci].cut && headMode === 'h') el('title', null, t, c.label);
       if (s.onCol) {
         t.classList.add('link');
         t.setAttribute('tabindex', '0');

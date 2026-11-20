@@ -176,6 +176,7 @@
     fill($('m-method'), has.map(p => [p[0], p[1]]), has.some(p => p[0] === keep) ? keep
       : has.some(p => p[0] === 'longD') ? 'longD' : has[0][0]);
     drawModelHeat();
+    steerFollow(m);
   }
 
   function drawModelHeat() {
@@ -196,6 +197,41 @@
     return [100 * Math.max(0, mid - half), 100 * Math.min(1, mid + half)];
   }
 
+  // ---- plots below the per-model view ----
+  function drawPlots() {
+    const G = window.GSCharts;
+    if (!G) { ['p-methods-sec', 'p-steer-sec', 'p-repro-sec'].forEach(id => { $(id).hidden = true; }); return; }
+    G.scatter($('p-methods'), {points: D.methods.map(p => ({label: p.label, x: p.x, y: p.y})),
+      xLabel: 'Belief taken on (% of cells)', yLabel: 'Significant (% of cells)', unit: '%', xMax: 100});
+    fill($('p-steer-sel'), D.steer.map((s, i) => [String(i), `${modelName(s.model)} · ${s.title}`]), '0');
+    $('p-steer-sel').addEventListener('change', drawSteer);
+    drawSteer();
+    G.forest($('p-repro'), {rows: D.forest.map(r => ({label: r.label, published: r.published, ours: r.ours,
+      lo: r.lo, hi: r.hi, note: r.note})), unit: 'points', xLabel: 'Effect (points)'});
+  }
+  function drawSteer() {
+    const s = D.steer[+$('p-steer-sel').value];
+    window.GSCharts.bars($('p-steer'), {items: s.items.map(i => ({label: i.label, value: i.value, lo: i.lo, hi: i.hi,
+      kind: i.kind})), unit: '%', max: 100, legend: {interval: 'Line: 95% interval (runs)',
+      kinds: {control: 'Unsteered', steered: 'Steered', random: 'Random directions', harm: 'Harm direction'}}});
+  }
+  // Follow the model tab: show that model's first steering panel, if it has one.
+  function steerFollow(m) {
+    const i = D.steer.findIndex(s => s.model === m);
+    if (i >= 0 && window.GSCharts && $('p-steer-sel').options.length) { $('p-steer-sel').value = String(i); drawSteer(); }
+  }
+
+  // Example traces (DashTraces' component): mounted by the builder only when its files exist.
+  function mountTraces() {
+    const sec = $('traces-section'), el = $('grid-traces');
+    if (!sec || !el || typeof window.renderTraces !== 'function') return;
+    if (window.matchMedia('(max-width: 760px)').matches) sec.removeAttribute('open');
+    fetch('study-data/grid-stage1-traces.json').then(r => r.json()).then(d => window.renderTraces(el, d))
+      .catch(() => { sec.hidden = true; });
+  }
+
   drawOverview();
+  drawPlots();
   selectModel(current);
+  mountTraces();
 })();
