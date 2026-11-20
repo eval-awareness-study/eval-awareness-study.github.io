@@ -47,3 +47,9 @@
   .gs-sub { font-size: 14px; }
   .gs-grid th[scope="row"] { min-width: 130px; }
 }
+.gs-latest { border: 1px solid var(--line); border-top: 3px solid var(--teal); border-radius: 4px; padding: 6px 16px 10px; background: var(--paper); }
+.gs-latest h2 { margin-top: 6px; }
+.gs-latest h3 { font-size: 16px; margin: 6px 0 4px; }
+.gs-latest caption { text-align: left; font: 600 14px ui-sans-serif, system-ui, sans-serif; padding: 4px 0; }
+.gs-latest th[scope="rowgroup"] { font-weight: 600; max-width: 300px; }
+.gs-updated { font: 400 13px ui-sans-serif, system-ui, sans-serif; color: var(--muted); margin-left: 8px; }

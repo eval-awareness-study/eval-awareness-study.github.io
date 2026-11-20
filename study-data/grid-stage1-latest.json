@@ -1,0 +1,37 @@
+{
+  "schema": "grid-stage1-latest-v1",
+  "updated": "20 Nov 2026, morning (PST)",
+  "status": [
+    {"state": "complete", "models": ["gpt-oss-20b", "gpt-oss-120b", "Ripple-65B", "Qwen3.5-122B"]},
+    {"state": "complete", "models": ["Flint"], "note": "τ-bench now complete too: 2,362 of 2,368 runs scored"},
+    {"state": "complete (API; prompt-level methods only)", "models": ["GPT-6.2 Sol", "GPT-6.1 Terra"],
+     "note": "harmless, blackmail and capability sets only: OpenAI blocked some harmful prompts, so the harmful sets were stopped"},
+    {"state": "finishing", "models": ["Nemotron 3 Super 120B", "Inkling 2 Small"]},
+    {"state": "running; results held back unread (held-out model)", "models": ["Gemma 4 31B"]},
+    {"state": "stalled (cluster outage)", "models": ["Muse Glimmer 30B", "Qwen3.8-27B", "Qwen3-32B"]}
+  ],
+  "steering": [
+    {"what": "Flint, agent tasks, toward evaluation (strength 0.1)", "rows": [
+      {"measure": "harmful agent tasks completed", "steered": [15, 32], "unsteered": [9, 32], "random": [30, 96]},
+      {"measure": "τ-bench tasks solved", "steered": [4, 32], "unsteered": [13, 32], "random": [36, 95]}],
+     "note": "Steered answers are shorter (τ-bench 5.9k against 14.9k tokens unsteered)."},
+    {"what": "Inkling 2 Small, chat, both directions (strength 0.1)", "rows": [
+      {"measure": "harmful requests complied with, toward evaluation", "steered": [14, 50], "unsteered": [21, 50], "random": [17, 50]},
+      {"measure": "harmful requests complied with, toward real deployment", "steered": [17, 50], "unsteered": [21, 50], "random": [17, 50]}],
+     "note": "The readout moves (+0.25 toward evaluation, −0.29 toward real deployment), behaviour stays within noise at 50 runs; one random direction only."},
+    {"what": "gpt-oss-20b, trained single-belief directions (safety evaluation, red-team prompt, simulated, real user)", "rows": [
+      {"measure": "harmless agent tasks refused: safety evaluation", "steered": [0, 84], "unsteered": [3, 84], "random": [15, 254]},
+      {"measure": "harmless agent tasks refused: red-team prompt", "steered": [1, 85], "unsteered": [3, 84], "random": [15, 254]},
+      {"measure": "harmless agent tasks refused: simulated", "steered": [7, 84], "unsteered": [3, 84], "random": [15, 254]},
+      {"measure": "harmless agent tasks refused: real user", "steered": [0, 87], "unsteered": [3, 84], "random": [15, 254]}],
+     "note": "Each raises its own readout answer on held-out prompts by +0.91 to +0.97, but none reproduces what planting the belief does, and each costs 5 to 8 accuracy points. For comparison, the linear safety-flavoured group direction gave 70 of 88."}
+  ],
+  "reproductions": [
+    {"study": "Niblett et al. 2026 (compliance gap with an evaluation notice)", "model": "gpt-4o-2024-11-20",
+     "result": "reproduced: 13 of 100 violations without the notice against 0 of 100 with it, as published"},
+    {"study": "Lynch et al. 2025 ('real or test' deliberation on blackmail), pilot", "model": "GPT-6.2 Sol, GPT-6.1 Terra",
+     "result": "not testable: 0 of 50 blackmail in every cell, and the deliberation is hidden from the API"}
+  ],
+  "sources": ["steering operators' final tables (Flint agent tasks; Inkling 2 Small chat)", "BELIEF-STEERING-V2.md section 8", "REPRO-RESULTS.md"],
+  "verdicts": null
+}
