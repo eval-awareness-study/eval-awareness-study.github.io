@@ -53,11 +53,15 @@
     const l = label(r);
     const tip = `${META.belief[r.belief]} · ${META.methods[r.method]}\nbelief ${pct(r.rate)} vs control ${pct(r.ref)}\n` +
       `difference ${pts(r.d)} ${ci(r)} points, p ${pfmt(r.p)} (${l})\n${r.tasks} tasks, ${r.runs} runs\n` +
-      `taken on: ${fact(r.taken, 'yes', 'no')} · halves: ${pts(r.h1)} / ${pts(r.h2)} (${fact(r.halves, 'agree', 'differ')})` +
+      (r.taken_sampled !== null && r.taken_sampled !== undefined
+        ? `sampled readout (API, not comparable with 'taken on'): ${fact(r.taken_sampled, 'rose', 'did not rise')}`
+        : `taken on: ${fact(r.taken, 'yes', 'no')}`) +
+      ` · halves: ${pts(r.h1)} / ${pts(r.h2)} (${fact(r.halves, 'agree', 'differ')})` +
       (r.poor_fit ? '\ntext flagged as a poor fit for this benchmark' : '');
     return `<td class="gs-cell${r.poor_fit ? ' poor' : ''}" style="background:${colour(r.d)}" title="${esc(tip)}">` +
       `<span class="v">${pts(r.d)}${l === 'Significant' ? ' ★' : ''}</span><span class="i">${ci(r)}</span>` +
-      `<span class="f">on ${fact(r.taken, '✓', '✗')} · halves ${fact(r.halves, '✓', '✗')}</span></td>`;
+      `<span class="f">${r.taken_sampled !== null && r.taken_sampled !== undefined ? 'sampled ' + fact(r.taken_sampled, '✓', '✗')
+        : 'on ' + fact(r.taken, '✓', '✗')} · halves ${fact(r.halves, '✓', '✗')}</span></td>`;
   }
 
   function renderGrid(f, rows) {
@@ -97,12 +101,13 @@
       || BELIEF_ORDER.indexOf(a.belief) - BELIEF_ORDER.indexOf(b.belief));
     $('list-count').textContent = `${sorted.length} cells`;
     const head = ['Model', 'Benchmark', 'Method', 'Belief', 'Group', 'Belief rate', 'Control', 'Difference', 'p', 'Label <span class="sub">nominal, uncorrected p</span>',
-      'Taken on', 'Halves', 'Tasks', 'Runs', 'Detectable'];
-    const num = new Set([5, 6, 7, 8, 11, 12, 13, 14]);
+      'Taken on', 'Sampled readout rose <span class="sub">API models; not pooled</span>', 'Halves', 'Tasks', 'Runs', 'Detectable'];
+    const num = new Set([5, 6, 7, 8, 12, 13, 14, 15]);
     const body = sorted.map(r => '<tr>' + [esc(META.models[r.model]), esc(META.bench[r.bench][0]), esc(META.methods[r.method]),
       esc(META.belief[r.belief]) + (r.poor_fit ? ' <span class="sub">poor fit</span>' : ''), esc(groupOf(r.belief)),
       pct(r.rate), pct(r.ref), `${pts(r.d)} <span class="sub">${ci(r)}</span>`, pfmt(r.p), badge(label(r)),
-      fact(r.taken, 'yes', 'no'), `${pts(r.h1)} / ${pts(r.h2)} <span class="sub">${fact(r.halves, 'agree', 'differ')}</span>`,
+      fact(r.taken, 'yes', 'no'), fact(r.taken_sampled, 'yes', 'no'),
+      `${pts(r.h1)} / ${pts(r.h2)} <span class="sub">${fact(r.halves, 'agree', 'differ')}</span>`,
       r.tasks, r.runs, finite(r.mde) ? r.mde.toFixed(0) : '–'].map((c, i) => `<td${num.has(i) ? ' class="number"' : ''}>${c}</td>`).join('') + '</tr>');
     $('map-list').innerHTML = `<table class="bp-table gs-wide"><thead><tr>${head.map((h, i) => `<th${num.has(i) ? ' class="number"' : ''}>${h}</th>`).join('')}` +
       `</tr></thead><tbody>${body.join('')}</tbody></table>`;
@@ -117,7 +122,8 @@
       (n.Inconclusive ? `, ${n.Inconclusive} inconclusive` : '') + (n.Unavailable ? `, ${n.Unavailable} unavailable` : '') +
       ' (uncorrected p; about 1 in 20 cells is Significant by chance alone).' + MODEL_ORDER
         .filter(m => (f.model === 'all' || f.model === m) && (META.partial[m] || []).some(b => f.bench === 'all' || f.bench === b))
-        .map(m => ` ${META.models[m]}: ${META.partial[m].map(b => META.bench[b][0]).join(', ')} still running, not listed.`).join('');
+        .map(m => ` ${META.models[m]}: ${META.partial[m].map(b => META.bench[b][0]).join(', ')} still running, not listed.`).join('') +
+      (f.model !== 'all' && META.notes[f.model] ? ` ${META.models[f.model]}: ${META.notes[f.model]}` : '');
     renderGrid(f, rows);
     renderList(rows);
   }

@@ -211,7 +211,6 @@
     "REPRO-RESULTS.md",
     "BELIEF-STEERING-V2.md section 9"
   ],
-  "verdicts": null,
   "steering_notes": [
     "New feature directions on gpt-oss-20b, built from matched sentence pairs, overlap far less than the old belief directions (mean cosine 0.13, 0.04 and −0.05 for three constructions, against 0.39 for the old ones on the same data). A 'safety check' and an 'observed' direction pass the readout checks on development prompts; their behaviour test is running (results later today)."
   ]

@@ -53,3 +53,7 @@
 .gs-latest caption { text-align: left; font: 600 14px ui-sans-serif, system-ui, sans-serif; padding: 4px 0; }
 .gs-latest th[scope="rowgroup"] { font-weight: 600; max-width: 300px; }
 .gs-updated { font: 400 13px ui-sans-serif, system-ui, sans-serif; color: var(--muted); margin-left: 8px; }
+.gs-verdicts { list-style: none; padding-left: 0; font: 14px/1.5 ui-sans-serif, system-ui, sans-serif; }
+.gs-verdicts > li { margin-bottom: 10px; }
+.gs-verdicts ul { margin: 4px 0; padding-left: 20px; }
+.gs-verdicts .sub { display: block; font-size: 13px; color: var(--muted); }
