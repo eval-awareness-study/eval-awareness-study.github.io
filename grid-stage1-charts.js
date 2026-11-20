@@ -706,38 +706,67 @@
       const a = Math.max(xmin, ymin), b = Math.min(xmax, ymax);
       if (b > a) el('line', {x1: X(a), y1: Y(a), x2: X(b), y2: Y(b), stroke: C.zero, 'stroke-dasharray': '4 3'}, svg);
     }
-    // Greedy label placement: try 8 spots around each point, avoid placed labels, points and the plot edge.
-    const R = 6, placed = [];
+    // Greedy label placement: try 8 spots around each point; labels stay inside the plot (flipping left/up/down as
+    // needed), avoid placed labels and other points, and wrap onto more lines instead of being truncated.
+    const R = 6, placed = [], lh = fs + 3;
     const circles = pts.map(p => ({x: X(p.x), y: Y(p.y)}));
-    const overlaps = (b, c) => !(b.x2 < c.x1 || b.x1 > c.x2 || b.y2 < c.y1 || b.y1 > c.y2);
     const order = pts.map((p, i) => i).sort((a, b) => circles[a].x - circles[b].x);
-    const labPos = [];
-    for (const i of order) {
-      const p = pts[i], c = circles[i];
-      const text = ellipsize(p.label, narrow ? 180 : 220, fs, 500), w = textW(text, fs, 500), h = fs + 2;
-      const cands = [[R + 4, 0, 'start'], [-R - 4, 0, 'end'], [0, -R - 6, 'middle'], [0, R + 6 + fs * 0.7, 'middle'],
-        [R + 3, -R - 3, 'start'], [-R - 3, -R - 3, 'end'], [R + 3, R + 3 + fs * 0.6, 'start'], [-R - 3, R + 3 + fs * 0.6, 'end']];
-      let best = null, bestScore = Infinity;
-      for (const [dx, dy, anchor] of cands) {
-        const tx = c.x + dx, ty = c.y + dy + (dy === 0 ? fs * 0.35 : 0);
-        const x1 = anchor === 'start' ? tx : anchor === 'end' ? tx - w : tx - w / 2;
-        const box = {x1, x2: x1 + w, y1: ty - fs * 0.85, y2: ty - fs * 0.85 + h};
-        let score = 0;
-        if (box.x1 < ml - 2 || box.x2 > W - 2 || box.y1 < 0 || box.y2 > mt + plotH + 2) score += 100;
-        for (const b of placed) if (overlaps(box, b)) score += 10;
-        circles.forEach((cc, j) => { if (j !== i && overlaps(box, {x1: cc.x - R, x2: cc.x + R, y1: cc.y - R, y2: cc.y + R})) score += 5; });
-        if (score < bestScore) { bestScore = score; best = {tx, ty, anchor, box, text}; }
-        if (score === 0) break;
+    const labs = pts.map(p => {
+      const longestWord = Math.max(...String(p.label).split(/\s+/).map(t => textW(t, fs, 500)));
+      const maxW = Math.max(longestWord, Math.min(narrow ? 150 : 210, plotW * 0.5));
+      const lines = wrap(p.label, maxW, fs, 500, 20).lines;
+      return {lines, w: Math.max(...lines.map(t => textW(t, fs, 500))), h: lines.length * lh};
+    });
+    // Candidate boxes: right/left of the point at several vertical shifts, and above/below at several distances.
+    const candidates = (c, w, h) => {
+      const out = [];
+      for (const k of [0, -1, 1, -2, 2, -3, 3, -4, 4]) {
+        const yc = c.y + k * lh;
+        out.push({x1: c.x + R + 4, y1: yc - h / 2, anchor: 'start'}, {x1: c.x - R - 4 - w, y1: yc - h / 2, anchor: 'end'});
       }
-      placed.push(best.box);
-      labPos[i] = best;
-    }
+      for (const k of [0, 1, 2, 3]) {
+        for (const sx of [0, -0.4, 0.4]) {
+          const x1 = c.x - w / 2 + sx * w;
+          out.push({x1, y1: c.y - R - 3 - h - k * lh, anchor: 'middle'}, {x1, y1: c.y + R + 3 + k * lh, anchor: 'middle'});
+        }
+      }
+      return out.map(o => ({...o, x2: o.x1 + w, y2: o.y1 + h}));
+    };
+    const area = (a, b) => Math.max(0, Math.min(a.x2, b.x2) - Math.max(a.x1, b.x1)) * Math.max(0, Math.min(a.y2, b.y2) - Math.max(a.y1, b.y1));
+    const boxDist = (c, b) => Math.hypot(Math.max(b.x1 - c.x, 0, c.x - b.x2), Math.max(b.y1 - c.y, 0, c.y - b.y2));
+    const place = (i, others) => {
+      const c = circles[i], {w, h} = labs[i];
+      let best = null, bestScore = Infinity;
+      for (const b of candidates(c, w, h)) {
+        let score = boxDist(c, b) * 0.6;
+        if (b.x1 < 0 || b.x2 > W || b.y1 < 0 || b.y2 > H) score += 1e5;
+        if (b.x1 < ml + 2 || b.x2 > ml + plotW - 2 || b.y1 < mt || b.y2 > mt + plotH) score += 2000;
+        for (const o of others) { const a = area(b, o); if (a > 0) score += 300 + a; }
+        circles.forEach(cc => { const a = area(b, {x1: cc.x - R - 1, x2: cc.x + R + 1, y1: cc.y - R - 1, y2: cc.y + R + 1}); if (a > 0) score += 150 + a; });
+        if (score < bestScore) { bestScore = score; best = b; }
+      }
+      return best;
+    };
+    const boxes = [];
+    order.forEach(i => { boxes[i] = place(i, order.filter(j => boxes[j]).map(j => boxes[j])); });
+    for (let pass = 0; pass < 3; pass++) order.forEach(i => { boxes[i] = place(i, order.filter(j => j !== i).map(j => boxes[j])); });
+    const labPos = pts.map((p, i) => {
+      const b = boxes[i];
+      const tx = b.anchor === 'start' ? b.x1 : b.anchor === 'end' ? b.x2 : (b.x1 + b.x2) / 2;
+      return {tx, ty: b.y1 + fs * 0.9, anchor: b.anchor, box: b, lines: labs[i].lines};
+    });
     pts.forEach((p, i) => {
       const c = circles[i], lp = labPos[i];
       const g = el('g', {tabindex: 0, role: 'img'}, svg);
       el('circle', {cx: c.x, cy: c.y, r: R, fill: p.color || C.teal, stroke: '#fff', 'stroke-width': 1.5}, g);
       el('circle', {cx: c.x, cy: c.y, r: R + 3, class: 'gs1c-ring'}, g);
-      el('text', {x: lp.tx, y: lp.ty, 'text-anchor': lp.anchor, 'font-size': fs, 'font-weight': 500, fill: C.ink}, g, lp.text);
+      const b = lp.box;
+      if (boxDist(c, b) > R + 9) {
+        const nx = clamp(c.x, b.x1, b.x2), ny = clamp(c.y, b.y1, b.y2), d = Math.hypot(nx - c.x, ny - c.y);
+        el('line', {x1: c.x + (nx - c.x) * (R + 1) / d, y1: c.y + (ny - c.y) * (R + 1) / d, x2: nx, y2: ny, stroke: C.muted, 'stroke-width': 0.8}, g);
+      }
+      const t = el('text', {x: lp.tx, y: lp.ty, 'text-anchor': lp.anchor, 'font-size': fs, 'font-weight': 500, fill: C.ink, class: 'gs1c-halo'}, g);
+      lp.lines.forEach((ln, k) => el('tspan', {x: lp.tx, dy: k ? lh : 0}, t, ln));
       const lines = () => {
         const t = tipLines(p.tip);
         if (t.length) return t;
