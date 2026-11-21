@@ -1,6 +1,6 @@
 {
   "schema": "grid-stage1-latest-v1",
-  "updated": "20 Nov 2026, afternoon (PST)",
+  "updated": "20 Nov 2026, evening (PST)",
   "status": [
     {
       "state": "complete",
@@ -30,27 +30,90 @@
       "note": "harmless, blackmail and capability sets only: OpenAI blocked some harmful prompts, so the harmful sets were stopped"
     },
     {
-      "state": "running: first-stage runs complete",
+      "state": "running",
       "models": [
-        "Qwen3.8-27B"
-      ],
-      "note": "chat, agent-task and cue runs complete (0 errors); long planted thoughts running, due about 21:30Z"
-    },
-    {
-      "state": "running (rented cards)",
-      "models": [
+        "Qwen3.8-27B",
         "Muse Glimmer 30B"
       ],
-      "note": "about 12:00–14:00Z Sat"
+      "note": "all runs generated; grading and the last τ-bench conversations finishing"
     },
     {
-      "state": "running; results held back unread (held-out model)",
+      "state": "running; held out",
       "models": [
         "Gemma 4 31B"
       ],
-      "note": "about 12:00–18:00Z Sat"
+      "note": "its results are never shown"
+    },
+    {
+      "state": "not started",
+      "models": [
+        "Gemma 4 26B",
+        "Qwen3-235B",
+        "Mistral Medium 3.5 128B"
+      ],
+      "note": "listed for stage 1, not started"
     }
   ],
+  "sweep": {
+    "not_run_anywhere": [
+      {
+        "bench": "impossiblebench",
+        "name": "ImpossibleBench",
+        "group": "agentic_safety",
+        "reason": "costly agent benchmark; no model has run it yet"
+      },
+      {
+        "bench": "terminal_bench",
+        "name": "Terminal-Bench 2.1",
+        "group": "agentic_capability",
+        "reason": "costly agent benchmark; no model has run it yet"
+      },
+      {
+        "bench": "swebench_pro",
+        "name": "SWE-bench Pro",
+        "group": "agentic_capability",
+        "reason": "costly agent benchmark; no model has run it yet"
+      }
+    ],
+    "exceptions": [
+      {
+        "models": ["GPT-6.2 Sol", "GPT-6.1 Terra"],
+        "benches": ["harmful_requests", "xstest_unsafe", "agentharm_harmful"],
+        "state": "not applicable",
+        "reason": "API model: the provider blocked some harmful prompts, so the harmful sets were stopped"
+      },
+      {
+        "models": ["GPT-6.2 Sol", "GPT-6.1 Terra"],
+        "benches": ["tau_bench"],
+        "state": "not run",
+        "reason": "not run for the API models"
+      },
+      {
+        "models": ["GPT-6.2 Sol", "GPT-6.1 Terra"],
+        "methods": ["thought", "longD", "longR", "steering"],
+        "state": "not applicable",
+        "reason": "API model: prompt-level methods only"
+      },
+      {
+        "models": ["Qwen3-32B"],
+        "benches": ["math500", "tau_bench"],
+        "state": "not run",
+        "reason": "not in its run"
+      },
+      {
+        "benches": ["mmlu_pro", "gpqa_diamond", "math500"],
+        "methods": ["longD", "longR"],
+        "state": "not run",
+        "reason": "long planted thoughts on the capability sets: gpt-oss models only"
+      },
+      {
+        "benches": ["tau_bench"],
+        "methods": ["longD", "longR"],
+        "state": "not applicable",
+        "reason": "long planted thoughts are not run on τ-bench"
+      }
+    ]
+  },
   "steering": [
     {
       "what": "Flint, agent tasks, toward evaluation (strength 0.1)",

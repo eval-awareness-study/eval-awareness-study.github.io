@@ -1,6 +1,7 @@
-// Grid sweep, stage 1: the summary page (takeaways are in the HTML; this draws the overview heat map, the per-model
-// views and the cross-model plots). Data: the JSON block #gs-main, written by scripts/dashboard/build_grid_stage1.py.
-// Charts: window.GSCharts (grid-stage1-charts.js); a plain-table heat map stands in if it is missing.
+// Grid sweep, stage 1: the summary page (takeaways and the sweep-status matrix are in the HTML; this adds the status
+// hover text and draws the four group cards, the per-model views and the cross-model plots). Data: the JSON block
+// #gs-main, written by scripts/dashboard/build_grid_stage1.py. Charts: window.GSCharts (grid-stage1-charts.js); a
+// plain-table heat map stands in if it is missing.
 // Labels follow the dashboard's rule: two-sided p < .05 with more than two tasks, no multiple-testing correction.
 (() => {
   'use strict';
@@ -73,7 +74,7 @@
           const x = at.get(`${rk}|${c.key}`);
           if (!x || x.na) return `<td class="na" title="${esc(x ? x.tip : '')}"></td>`;
           return `<td class="${x.sig ? 'sig' : ''}" style="background:${colour(x.value, max)};color:${Math.abs(x.value) > max * .6 ? '#fff' : '#222'}" ` +
-            `title="${esc(row.label + ' · ' + c.label + '\n' + x.tip)}">${pts(x.value)}${x.sig ? '●' : ''}</td>`;
+            `title="${esc(row.label + ' · ' + c.label + '\n' + x.tip)}">${x.text !== undefined ? esc(x.text) : pts(x.value)}${x.sig ? '●' : ''}</td>`;
         }).join('') + '</tr>';
       }).join('')).join('');
     el.innerHTML = `<div class="table-scroll"><table class="gsm-ftable"><thead><tr><th></th>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
@@ -84,6 +85,11 @@
       `<span class="bar" style="width:${Math.max(0, i.value) / (s.max || 100) * 60}%"></span><b>${Math.round(i.value)}${esc(s.unit)}</b></div>`).join('') + '</div>';
   }
   const charts = () => window.GSCharts || {heatmap: tableHeat, bars: tableBars};
+  // Replace a chart with a message (stops its redraw-on-resize first).
+  function clear(el, msg) {
+    if (el.__gs1c) el.__gs1c.destroy();
+    el.innerHTML = msg ? `<p class="gsm-empty">${msg}</p>` : '';
+  }
 
   // Beliefs with at least one cell among the given cells, kept in group order.
   function rowSpec(present) {
@@ -100,40 +106,147 @@
     high: ENDS[b] ? ENDS[b][1] : 'higher', sig: 'Significant = nominal p < 0.05, uncorrected, up to 50 tasks × 2 samples',
     na: 'Not run'});
 
-  // ---- overview: beliefs x models ----
-  fill($('o-bench'), D.outcomes.map(o => [o[0], o[1]]), 'agentharm_harmless');
-  fill($('o-method'), D.plantings.map(p => [p[0], p[1]]), 'longD');
-  function drawOverview() {
-    const b = $('o-bench').value, method = $('o-method').value;
+  // ---- sweep status (the matrix is in the HTML): hover/tap text; a group header opens that group's card ----
+  const SW = D.sweep, GRP = Object.fromEntries(SW.groups.map(g => [g.key, g])), BN = SW.names, TOWARD = SW.toward;
+  function bindStatus() {
+    document.querySelectorAll('#status .gss-c').forEach(btn => {
+      if (!window.GSCharts || !window.GSCharts.tip) return;   // the title attribute stays as the fallback
+      const t = JSON.parse(btn.dataset.tip);
+      btn.removeAttribute('title');
+      window.GSCharts.tip(btn, () => t);
+    });
+    document.querySelectorAll('#status .gss-g').forEach(btn => btn.addEventListener('click', () => {
+      selectGroup(btn.dataset.g, true);
+      $('groups').scrollIntoView({behavior: 'smooth'});
+    }));
+  }
+  // Why a (model, benchmark, method) has no cell, from the sweep status.
+  function whyNot(m, b, method) {
+    const c = (SW.cells[m] || {})[b];
+    if (!c) return 'not run';
+    if (c.state !== 'complete') return `${c.state}: ${c.reason}`;
+    const e = (c.methods || []).find(x => x[0] === method);
+    if (!e) return `${PLANT[method].name.toLowerCase()}: not part of the design for this benchmark`;
+    return e[1] === 'run' ? 'not run for this belief' : `${e[1]}: ${e[2]}`;
+  }
+  const hasCell = (b, method) => MODELS.some(m => BELIEFS.some(bel => cell(m, b, method, bel)));
+
+  // ---- the four group cards: summary (belief x model over the group's benchmarks), then one benchmark ----
+  let gCur = SW.groups[0].key;
+  const gState = {};   // per group: chosen planting method and benchmark
+  const groupMethods = g => D.plantings.map(p => p[0]).filter(k => g.benches.some(b => hasCell(b, k)));
+  function defaultMethod(g, ms) {   // long thought (belief) where most models have it, else the one-sentence thought
+    const cover = k => MODELS.filter(m => g.benches.some(b => BELIEFS.some(bel => cell(m, b, k, bel)))).length;
+    return ['longD', 'thought', 'statement'].find(k => ms.includes(k) && cover(k) >= MODELS.length / 2) || ms[0];
+  }
+  const direction = g => g.ends[1] === 'more cautious' ? 'refusals up, harmful compliance or actions down'
+    : 'accuracy or tasks solved up';
+  $('g-tabs').innerHTML = SW.groups.map(g => {
+    const run = g.benches.filter(b => D.plantings.some(p => hasCell(b, p[0]))).length;
+    return `<button type="button" role="tab" aria-controls="g-view" data-g="${esc(g.key)}"><span>${esc(g.name)}</span>` +
+      `<span class="gt-sub">${run} of ${g.benches.length + g.unrun.length} benchmarks run</span></button>`;
+  }).join('');
+  $('g-tabs').querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => selectGroup(btn.dataset.g, true)));
+  $('g-method').addEventListener('change', () => { gState[gCur].method = $('g-method').value; drawGroup(); });
+
+  // follow: a reader's choice also filters the per-model view below to the group's benchmarks.
+  function selectGroup(k, follow) {
+    gCur = k;
+    const g = GRP[k], ms = groupMethods(g);
+    $('g-tabs').querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.g === k)));
+    if (!gState[k]) gState[k] = {method: defaultMethod(g, ms), bench: null};
+    fill($('g-method'), ms.map(m => [m, PLANT[m].name]), gState[k].method);
+    $('g-what').innerHTML = `<b>${esc(g.name)}</b>: ${esc(g.what)}` + (g.unrun.length
+      ? ` <span class="sub">Not run by any model yet: ${esc(g.unrun.map(b => BN[b]).join(', '))}.</span>` : '');
+    drawGroup();
+    if (follow) { $('m-group').value = k; selectModel(current); }
+  }
+  function drawGroup() { drawGroupSummary(); drawBenchTabs(); drawGroupBench(); }
+  const toModel = m => { selectModel(m); $('models').scrollIntoView({behavior: 'smooth'}); };
+
+  function drawGroupSummary() {
+    const g = GRP[gCur], method = $('g-method').value, [lowW, highW] = g.ends;
     const cells = [], present = new Set();
-    for (const m of MODELS) for (const bel of BELIEFS) {
-      const c = cell(m, b, method, bel);
-      if (c) present.add(bel);
-    }
+    for (const m of MODELS) for (const bel of BELIEFS) if (g.benches.some(b => cell(m, b, method, bel))) present.add(bel);
     for (const m of MODELS) for (const bel of present) {
-      const running = (D.models[m].partial || []).includes(b);
-      cells.push(heatCell(bel, m, cell(m, b, method, bel),
-        running ? 'still running' : `not run: ${PLANT[method].name.toLowerCase()} on this benchmark`));
+      const per = g.benches.map(b => [b, cell(m, b, method, bel)]);
+      const got = per.filter(x => x[1]);
+      if (!got.length) {
+        cells.push({row: bel, col: m, value: null, sig: false, na: true,
+          tip: g.benches.map(b => `${BN[b]}: ${whyNot(m, b, method)}`).join('\n')});
+        continue;
+      }
+      const k = got.filter(([, c]) => isSig(c.r)).length;
+      const mean = got.reduce((s, [b, c]) => s + TOWARD[b] * c.r.d, 0) / got.length;
+      const lines = [`${k} of ${got.length} benchmarks Significant`,
+        `mean signed difference ${pts(mean, 1)} points (${mean >= 0 ? highW : lowW})`,
+        ...per.map(([b, c]) => !c ? `${BN[b]}: ${whyNot(m, b, method)}`
+          : `${BN[b]}: ${pts(c.r.d, 1)} points (${ENDS[b][c.r.d >= 0 ? 1 : 0]}), ${label(c.r)}, p ${pfmt(c.r.p)}` +
+            (c.reading ? `, ${c.reading}` : ''))];
+      // the benchmark a click opens below: the largest Significant difference, else the largest difference
+      const best = got.slice().sort(([, a], [, c]) => (isSig(c.r) - isSig(a.r)) || Math.abs(c.r.d) - Math.abs(a.r.d))[0][0];
+      cells.push({row: bel, col: m, value: mean, text: `${k}/${got.length}`, sig: k > 0, na: false, bench: best,
+        tip: lines.join('\n')});
     }
-    const host = $('o-heat');
+    const host = $('g-heat');
     if (!present.size) {
-      host.innerHTML = `<p class="gsm-empty">${esc(PLANT[method].name)} was not run on ${esc(NOUN[b])} in any model.</p>`;
+      clear(host, `${esc(PLANT[method].name)} was not run on this group in any model.`);
     } else {
       charts().heatmap(host, {...rowSpec(present), cols: MODELS.map(m => ({key: m, label: modelName(m)})), cells,
-        scale: {min: -40, max: 40, unit: 'points'}, legend: legend(b), onCol: m => { selectModel(m); $('models').scrollIntoView({behavior: 'smooth'}); }});
+        scale: {min: -30, max: 30, unit: 'points'}, showValues: true, onCol: toModel, onCell: c => {
+          if (c.na || !c.bench) return;
+          gState[gCur].bench = c.bench;
+          drawBenchTabs();
+          drawGroupBench();
+          $('h-gbench').scrollIntoView({behavior: 'smooth'});
+        },
+        legend: {title: `Mean difference over the group's benchmarks (points; + = ${highW})`, low: lowW, high: highW,
+          sig: 'At least one benchmark Significant', na: 'Not run'}});
     }
-    $('o-legend').innerHTML = `<b>${esc(PLANT[method].name)}</b>: ${esc(PLANT[method].what)}. Colour: rate with the belief ` +
-      `minus rate with the same method's neutral text. Outlined: Significant. Grey: not run. Hover or tap a cell for ` +
-      `rates, interval, tasks and runs; click a model name for its own view below.`;
+    $('g-legend').innerHTML = `<b>${esc(PLANT[method].name)}</b>, ${esc(PLANT[method].what)}. Number: the group's ` +
+      `benchmarks with a Significant difference / benchmarks run; colour: mean difference, + = ${esc(highW)} ` +
+      `(${esc(direction(g))}). Hover or tap a cell for each benchmark; click it (tap twice) to open its strongest benchmark below.`;
   }
-  $('o-bench').addEventListener('change', drawOverview);
-  $('o-method').addEventListener('change', drawOverview);
+
+  function drawBenchTabs() {
+    const g = GRP[gCur], st = gState[gCur], method = $('g-method').value;
+    if (!st.bench || !hasCell(st.bench, method)) st.bench = g.benches.find(b => hasCell(b, method)) || st.bench || g.benches[0];
+    $('g-bench').innerHTML = g.benches.map(b => `<button type="button" role="tab" data-b="${esc(b)}" ` +
+      `aria-selected="${b === st.bench}">${esc(BN[b])}</button>`).join('') +
+      g.unrun.map(b => `<button type="button" role="tab" disabled aria-disabled="true">${esc(BN[b])}: not run yet</button>`).join('');
+    $('g-bench').querySelectorAll('button[data-b]').forEach(btn => btn.addEventListener('click', () => {
+      st.bench = btn.dataset.b;
+      $('g-bench').querySelectorAll('button[data-b]').forEach(x => x.setAttribute('aria-selected', String(x === btn)));
+      drawGroupBench();
+    }));
+  }
+
+  function drawGroupBench() {
+    const b = gState[gCur].bench, method = $('g-method').value;
+    const cells = [], present = new Set();
+    for (const m of MODELS) for (const bel of BELIEFS) if (cell(m, b, method, bel)) present.add(bel);
+    for (const m of MODELS) for (const bel of present) cells.push(heatCell(bel, m, cell(m, b, method, bel), whyNot(m, b, method)));
+    const host = $('g-bheat');
+    if (!present.size) {
+      clear(host, `${esc(PLANT[method].name)} was not run on ${esc(NOUN[b])} in any model.`);
+    } else {
+      charts().heatmap(host, {...rowSpec(present), cols: MODELS.map(m => ({key: m, label: modelName(m)})), cells,
+        scale: {min: -40, max: 40, unit: 'points'}, legend: legend(b), onCol: toModel});
+    }
+    $('g-blegend').innerHTML = `<b>${esc(BN[b])}</b>, ${esc(NOUN[b])}. Colour: rate with the belief minus rate with ` +
+      `the same method's neutral text. Outlined: Significant. Grey: not run. Hover or tap a cell for rates, interval, ` +
+      `tasks and runs; click a model name for its own view below.`;
+  }
 
   // ---- per model ----
   let current = MODELS[0];
   $('m-tabs').innerHTML = MODELS.map(m => `<button type="button" role="tab" data-m="${esc(m)}">${esc(modelName(m))}</button>`).join('');
   $('m-tabs').querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => selectModel(btn.dataset.m)));
   $('m-method').addEventListener('change', drawModelHeat);
+  fill($('m-group'), [['all', 'All benchmarks'], ...SW.groups.map(g => [g.key, g.name])], 'all');
+  $('m-group').addEventListener('change', () => selectModel(current));
+  // Benchmarks of the per-model view: all of them, or one group's (following the group cards).
+  const modelBenches = () => $('m-group').value === 'all' ? D.outcomes.map(o => o[0]) : GRP[$('m-group').value].benches;
 
   const effect = (r, reading) => `${PLANT[r.method] ? PLANT[r.method].name : 'Long planted thought (belief and reason' + (reading ? ', first reading' : '') + ')'} ` +
     `'${D.belief[r.belief]}' ${r.d > 0 ? 'raises' : 'lowers'} ${NOUN[r.bench]} by <b>${Math.abs(Math.round(r.d))} points</b> ` +
@@ -143,14 +256,26 @@
     current = m;
     $('m-tabs').querySelectorAll('button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.m === m)));
     const info = D.models[m];
-    const mine = ROWS.filter(r => r.model === m);
+    const benches = modelBenches(), gk = $('m-group').value;
+    const mine = ROWS.filter(r => r.model === m && benches.includes(r.bench));
     $('m-name').textContent = modelName(m);
     $('m-note').textContent = info.note ? (info.interim ? 'Interim: ' : '') + info.note : '';
     $('m-note').hidden = !info.note;
+    if (!mine.length) {   // e.g. a model without τ-bench, viewed on agentic capability
+      $('m-take').innerHTML = `<li>No ${esc(GRP[gk].name.toLowerCase())} results: ` +
+        `${esc(benches.map(b => `${BN[b]} ${whyNot(m, b, '')}`).join('; '))}.</li>`;
+      $('m-sig').innerHTML = '<li class="sub">none</li>';
+      clear($('m-base'));
+      fill($('m-method'), [], '');
+      clear($('m-heat'));
+      steerFollow(m);
+      return;
+    }
     // takeaways
     const sig = mine.filter(isSig).sort((a, b) => Math.abs(b.d) - Math.abs(a.d));
     const clean = sig.filter(r => !r.poor_fit);
-    const lines = [`<b>${sig.length} of ${mine.length.toLocaleString('en')}</b> cells Significant (about ` +
+    const where = gk === 'all' ? '' : ` on ${esc(GRP[gk].name.toLowerCase())}`;
+    const lines = [`<b>${sig.length} of ${mine.length.toLocaleString('en')}</b> cells Significant${where} (about ` +
       `${Math.round(mine.length / 20)} expected by chance alone).`];
     const seen = new Set();
     for (const r of clean) {   // the two largest effects on different outcomes
@@ -165,7 +290,7 @@
       `${r.tasks} tasks${r.poor_fit ? '; text a poor fit' : ''}</span></li>`).join('')
       || '<li class="sub">none</li>';
     // base rates
-    const base = D.outcomes.map(o => D.base.find(x => x.model === m && x.bench === o[0])).filter(Boolean);
+    const base = benches.map(b => D.base.find(x => x.model === m && x.bench === b)).filter(Boolean);
     charts().bars($('m-base'), {items: base.map(x => {
       const n = x.runs, k = Math.round(x.rate * n / 100), [lo, hi] = wilson(k, n);
       return {label: OUT[x.bench].short, value: x.rate, lo, hi, kind: 'base'};
@@ -181,11 +306,11 @@
 
   function drawModelHeat() {
     const m = current, method = $('m-method').value;
-    const benches = D.outcomes.map(o => o[0]).filter(b => BELIEFS.some(bel => cell(m, b, method, bel)));
+    const benches = modelBenches().filter(b => BELIEFS.some(bel => cell(m, b, method, bel)));
     const present = new Set(BELIEFS.filter(bel => benches.some(b => cell(m, b, method, bel))));
     const cells = [];
-    for (const b of benches) for (const bel of present) cells.push(heatCell(bel, b, cell(m, b, method, bel), 'not run'));
-    if (!benches.length) { $('m-heat').innerHTML = '<p class="gsm-empty">No cells.</p>'; return; }
+    for (const b of benches) for (const bel of present) cells.push(heatCell(bel, b, cell(m, b, method, bel), whyNot(m, b, method)));
+    if (!benches.length) { clear($('m-heat'), 'No cells.'); return; }
     charts().heatmap($('m-heat'), {...rowSpec(present), cols: benches.map(b => ({key: b, label: OUT[b].short})), cells,
       scale: {min: -40, max: 40, unit: 'points'}, legend: {...legend(null), low: 'lower rate', high: 'higher rate'}});
   }
@@ -230,7 +355,8 @@
       .catch(() => { sec.hidden = true; });
   }
 
-  drawOverview();
+  bindStatus();
+  selectGroup(gCur, false);
   drawPlots();
   selectModel(current);
   mountTraces();

@@ -1,5 +1,5 @@
 // Grid sweep, stage 1 (grid-stage1.html): chart primitives. Pure drawing, no data loading.
-// window.GSCharts = {heatmap, bars, forest, scatter, color, fmt}. Each chart function takes a container element and a
+// window.GSCharts = {heatmap, bars, forest, scatter, color, fmt, tip}. Each chart function takes a container element and a
 // plain spec, owns the container's contents, redraws itself when the container's width changes (it waits for a
 // nonzero width, so charts inside hidden tabs draw when shown) and returns {update(spec), destroy()}. Calling it again
 // on the same element replaces the previous chart. Output is inline SVG sized in CSS pixels (text stays readable at
@@ -313,9 +313,10 @@
   }
 
   // ---------- heatmap ----------
-  // spec: {rows:[{key,label}], cols:[{key,label}], cells:[{row, col, value, sig, na, tip}], rowGroups:[{label, rows:[keys]}],
+  // spec: {rows:[{key,label}], cols:[{key,label}], cells:[{row, col, value, sig, na, tip, text}], rowGroups:[{label, rows:[keys]}],
   //        scale:{min, max, unit}, legend: string | {title, low, high, sig, na, note} | false,
   //        onCol(colKey), onCell(cell), showValues (default: when cells are at least 34 px wide), maxCellWidth (120), title}
+  //        A cell's ``text`` (e.g. '2/3') replaces the printed value; its colour still comes from ``value``.
   function drawHeatmap(root, s, W) {
     const narrow = W < 560, fs = narrow ? 11 : 12;
     const rows = norm(s.rows), cols = norm(s.cols);
@@ -441,8 +442,9 @@
           el('rect', {x: x + 3.5, y: y + 3.5, width: cellW - 7, height: h - 7, rx: 1, fill: 'none', stroke: '#fff', 'stroke-width': 1, opacity: 0.9}, g);
         }
         if (!na && showVals) {
-          el('text', {x: x + cellW / 2, y: y + h / 2 + fs * 0.36, 'text-anchor': 'middle', 'font-size': fs - 0.5, 'font-weight': cell.sig ? 700 : 500,
-            fill: darkFill(cell.value, L) ? '#fff' : C.ink, 'font-variant-numeric': 'tabular-nums', 'pointer-events': 'none'}, g, fmt(cell.value, {signed: true, digits: 0}));
+          el('text', {x: x + cellW / 2, y: y + h / 2 + fs * 0.36, 'text-anchor': 'middle', 'font-size': cell.text !== undefined && cellW < 30 ? fs - 2 : fs - 0.5, 'font-weight': cell.sig ? 700 : 500,
+            fill: darkFill(cell.value, L) ? '#fff' : C.ink, 'font-variant-numeric': 'tabular-nums', 'pointer-events': 'none'}, g,
+            cell.text !== undefined ? String(cell.text) : fmt(cell.value, {signed: true, digits: 0}));
         }
         el('rect', {x: x + 0.5, y: y + 0.5, width: cellW - 1, height: h - 1, rx: 2, class: 'gs1c-ring'}, g);
         const header = `${r.label} · ${c.label}`;
@@ -790,5 +792,7 @@
     scatter: (container, spec) => mount(container, spec, drawScatter),
     color,
     fmt,
+    // The shared tooltip on any element (e.g. HTML table cells): get() -> {header, lines}; opts as bindTip.
+    tip: (node, get, opts) => { injectStyle(); bindTip(node, get, opts); },
   };
 })();
