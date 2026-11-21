@@ -48,8 +48,7 @@
       "state": "not started",
       "models": [
         "Gemma 4 26B",
-        "Qwen3-235B",
-        "Mistral Medium 3.5 128B"
+        "Qwen3-235B"
       ],
       "note": "listed for stage 1, not started"
     }
