@@ -109,7 +109,7 @@
   // ---- sweep status (the matrix is in the HTML): hover/tap text; a group header opens that group's card ----
   const SW = D.sweep, GRP = Object.fromEntries(SW.groups.map(g => [g.key, g])), BN = SW.names, TOWARD = SW.toward;
   function bindStatus() {
-    document.querySelectorAll('#status .gss-c').forEach(btn => {
+    document.querySelectorAll('#status .gss-c, #fullscale .gss-c').forEach(btn => {
       if (!window.GSCharts || !window.GSCharts.tip) return;   // the title attribute stays as the fallback
       const t = JSON.parse(btn.dataset.tip);
       btn.removeAttribute('title');
@@ -157,7 +157,7 @@
     if (!gState[k]) gState[k] = {method: defaultMethod(g, ms), bench: null};
     fill($('g-method'), ms.map(m => [m, PLANT[m].name]), gState[k].method);
     $('g-what').innerHTML = `<b>${esc(g.name)}</b>: ${esc(g.what)}` + (g.unrun.length
-      ? ` <span class="sub">Not run by any model yet: ${esc(g.unrun.map(b => BN[b]).join(', '))}.</span>` : '');
+      ? ` <span class="sub">In no model's stage 1: ${esc(g.unrun.map(b => BN[b]).join(', '))}.</span>` : '');
     drawGroup();
     if (follow) { $('m-group').value = k; selectModel(current); }
   }
