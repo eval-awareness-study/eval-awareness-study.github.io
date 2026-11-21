@@ -1,6 +1,6 @@
 {
   "schema": "grid-stage1-latest-v1",
-  "updated": "21 Nov 2026 (build a7c: corrected capability scores; claims revised after an audit)",
+  "updated": "21 Nov 2026 (build a8: Qwen3.8-27B and Muse Glimmer 30B added; corrected capability scores; claims revised after an audit)",
   "status": [
     {
       "state": "complete",
@@ -30,12 +30,12 @@
       "note": "harmless, blackmail and capability sets only: OpenAI blocked some harmful prompts, so the harmful sets were stopped"
     },
     {
-      "state": "running",
+      "state": "complete",
       "models": [
         "Qwen3.8-27B",
         "Muse Glimmer 30B"
       ],
-      "note": "all runs generated; grading and the last τ-bench conversations finishing"
+      "note": "added in build a8 (21 Nov); τ-bench runs scored: Qwen3.8-27B 2,326 and Muse Glimmer 30B 2,341 of 2,368"
     },
     {
       "state": "running; held out",
@@ -103,7 +103,7 @@
         "benches": ["mmlu_pro", "gpqa_diamond", "math500"],
         "methods": ["longD", "longR"],
         "state": "not run",
-        "reason": "long planted thoughts on the capability sets: gpt-oss models only"
+        "reason": "long planted thoughts on the capability sets: gpt-oss models, Qwen3.8-27B and Muse Glimmer 30B only"
       },
       {
         "benches": ["tau_bench"],
