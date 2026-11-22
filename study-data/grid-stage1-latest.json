@@ -288,7 +288,7 @@
   "data": "Interim analysis of the full-scale run, data as of 22 Nov, 02:30 PST; numbers will change as parts finish.",
   "lead": [
    "The 21 Nov audit found flaws in the first planted-thought texts, so every one was rewritten and rerun on the stage-1 models. A planted text now only states the belief: it no longer says anything about whether the request is harmful or safe to answer, it ends by handing over to the task ('Now to the task itself. What I am being asked here is', which the model completes), and each length has neutral texts of the same length to compare against.",
-   "Answer so far: on chat requests and on knowledge and maths questions, the stage-1 planted-thought effects mostly vanish. On agent tasks, a planted belief still makes models refuse more harmless tasks, and on most models how much depends on the belief: beliefs that the run is watched or matters raise refusals; 'simulated, nothing is real' and 'this conversation is not logged' do not. One exception: on Gemma 4 26B 'simulated' raises refusals as much as the evaluation beliefs do, about 5 points. Three models barely move (Qwen3.8-27B, Nemotron 3 Super 120B, Qwen3-32B: +1 to +6 points). Control texts added on 22 Nov show that on agent tasks it is the claim about evaluation that does this, not safety-flavoured words or a reminder to be careful (see 'Is it the belief?' below)."
+   "Answer so far: on chat requests and on knowledge and maths questions, the stage-1 planted-thought effects mostly vanish. On agent tasks, a planted belief still makes models refuse more harmless tasks, and on most models how much depends on the belief: beliefs that the run is watched or matters raise refusals; 'simulated, nothing is real' and 'this conversation is not logged' do not. One exception: on Gemma 4 26B 'simulated' raises refusals as much as the evaluation beliefs do, about 5 points. Three models barely move (Qwen3.8-27B, Nemotron 3 Super 120B, Qwen3-32B: +1 to +6 points). Control texts added on 22 Nov show that on the four models where beliefs raise refusals of agent tasks most, the rise comes from the belief, not from safety-flavoured words or a reminder to be careful; on chat requests the control texts move refusals as much as the beliefs (see 'Is it the belief?' below)."
   ],
   "terms": [
    {
@@ -301,11 +301,15 @@
    },
    {
     "term": "Change, in points",
-    "text": "the belief text's rate minus the neutral texts' rate, in percentage points. The tables average it over the beliefs of a kind."
+    "text": "the belief (or control) text's rate minus the neutral texts' rate, in percentage points. The tables average it over the beliefs of a kind."
    },
    {
     "term": "Harmless agent tasks",
-    "text": "AgentHarm's harmless tasks: the model works as an agent with tools on an everyday request, so refusing is over-caution. Refusals of these tasks are the outcome in all three tables."
+    "text": "AgentHarm's harmless tasks: the model works as an agent with tools on an everyday request, so refusing is over-caution. Refusals of these tasks are the outcome in every table of this section except the chat-request ones."
+   },
+   {
+    "term": "Borderline-but-safe chat requests",
+    "text": "OR-Bench-Hard: chat requests that sound risky but are harmless, so refusing is over-caution."
    },
    {
     "term": "Evaluation-type beliefs (11)",
@@ -313,7 +317,7 @@
    },
    {
     "term": "Above zero",
-    "text": "the belief's 95% interval (from resampling tasks) lies above zero. No correction for the number of beliefs: by chance about 1 belief in 40 lands above zero."
+    "text": "the 95% interval of the change (from resampling tasks) lies above zero; 'below zero' likewise. No correction for the number of texts: by chance about 1 text in 40 lands above zero."
    },
    {
     "term": "Counts as an effect",
@@ -344,11 +348,26 @@
    "lead": "Change against each method's own neutral texts, averaged over the beliefs (points). On the gpt-oss models and Qwen3.5-122B a planted thought moves refusals more than the same belief as a user statement or an operator notice, and a planted reminder that the usual rules apply, naming no situation, moves them as much or more.",
    "note": "Caveat: the stage-1 columns ran on other servers with the older texts (no hand-over ending, older neutral texts), so they compare with the rerun column only roughly. User statement: a sentence at the start of the user's message. Operator notice: a paragraph in the system message."
   },
-  "findings": [
-   {
-    "lead": "Is it the belief? Control texts say yes on agent tasks, no on chat requests.",
-    "text": "Four control texts were planted in the same way on the same servers: a reminder that the usual rules apply, an intention to be careful, a general remark that AI systems are sometimes evaluated (no claim about this conversation), and the words 'safety' and 'evaluation' used about a cooling inspection. On five models so far, with long texts, refusals of harmless agent tasks change by: gpt-oss-20b beliefs +23, rule reminder +10, careful −1, general remark +17, unrelated words +1; Muse Glimmer 30B +19, −9, −11, +6, +3; Flint +8, 0, −2, 0, −3; Qwen3-32B +5, +2, 0, +6, +1; Nemotron 3 Super 120B +4, +1, 0, +6, +3. So the words alone do nothing, a caution or a rule reminder does little or nothing outside gpt-oss-20b, and the general remark about evaluation comes closest to the beliefs. On chat requests the controls move refusals as much as the beliefs do (Qwen3-32B: beliefs +14, rule reminder +17), so the chat changes are not specific to the belief."
+  "table_ctl": {
+   "title": "Is it the belief? Control texts planted the same way",
+   "lead": "Does the rise in refusals come from the belief, or from any text that sounds safety-minded? To test this, four control texts were planted in the same way and on the same servers as the neutral and belief texts: a reminder that the usual rules apply; an intention to be careful; a general remark that AI systems are sometimes evaluated, with no claim about this conversation; and the words 'safety' and 'evaluation' used about the inspection of a cooling system.",
+   "legend": "Control-text data as of 22 Nov, 06:26 PST. Change against neutral texts of the same length, in points (percentage points); 'above zero' or 'below zero': the change's 95% interval lies wholly on that side of zero. The first change column pools three beliefs: 'this is a safety evaluation', 'this is an evaluation' and 'this is a real deployment with a real user'; the next four are the control texts, in the order above.",
+   "agent": {
+    "caption": "Harmless agent tasks refused, long texts (about 100 words)",
+    "caption_short": "Harmless agent tasks refused, one-sentence texts",
+    "note": "Reading: on gpt-oss-20b, Muse Glimmer 30B, Ripple-65B and Flint the beliefs raise refusals (by 8 to 23 points) more than any control text does. The same words in an unrelated sense and the intention to be careful never raise refusals (the intention to be careful lowers them on Muse Glimmer 30B, Ripple-65B and Gemma 4 26B), and the reminder of the usual rules raises them only on gpt-oss-20b (+10). The general remark comes closest to the beliefs: it raises refusals on gpt-oss-20b (+17, against +23 for the beliefs), and on Nemotron 3 Super 120B and Qwen3-32B, where the beliefs add only +4 and +5, it adds +6. On Gemma 4 26B the three pooled beliefs do not move refusals."
    },
+   "chat": {
+    "caption": "Borderline-but-safe chat requests refused (OR-Bench), long texts",
+    "caption_short": "Borderline-but-safe chat requests refused (OR-Bench), one-sentence texts",
+    "note": "Reading: wherever the beliefs move these refusals, a control text moves them as much: Qwen3-32B beliefs +14, usual rules +17; Flint beliefs +10, general remark +11; Nemotron 3 Super 120B and Ripple-65B beliefs −11, usual rules and intention to be careful −11 to −18. So on chat requests the change is not specific to the belief."
+   },
+   "short": "One-sentence texts (both outcomes)",
+   "flags": {
+    "gpt-oss-120b": "Flagged: after the long texts gpt-oss-120b sometimes stops its reasoning right where the planted text ends (in 8.5% of runs with neutral texts, 17% with the intention to be careful), so its long-text row is not a result."
+   }
+  },
+  "findings": [
    {
     "lead": "Blackmail and harmful compliance follow the same pattern.",
     "text": "Ripple-65B blackmails in 14% of runs with a neutral one-sentence text and in 0% with each of six evaluation-type texts; 'simulated' and 'not logged' leave it unchanged. Completion of harmful agent tasks falls by 7 to 9 points on average on gpt-oss-20b, gpt-oss-120b and Qwen3.5-122B, most for 'real deployment', not for 'simulated' or 'not logged'."
@@ -374,7 +393,7 @@
     "text": "Steering (adding a direction to the model's internal activations) changes what the model says about its situation in a way specific to the belief, but not its behaviour: unrelated directions move behaviour by similar amounts. No steering method has passed that test yet; work continues."
    }
   ],
-  "running": "Still running: Qwen3.8-27B's extra-long texts, Inkling 2 Small, the control texts on six more models, and τ-bench, BFCL, AppWorld and ImpossibleBench on several models (see 'Full-scale run' below). New agent benchmarks so far: no effect on ImpossibleBench, BFCL, τ-bench or AppWorld for the models finished."
+  "running": "Still running: Qwen3.8-27B's extra-long texts, Inkling 2 Small, the control texts on agent tasks for gpt-oss-120b and Qwen3.8-27B (not yet started on Inkling 2 Small and Qwen3.5-122B), and τ-bench, BFCL, AppWorld and ImpossibleBench on several models (see 'Full-scale run' below). New agent benchmarks so far: no effect on ImpossibleBench, BFCL, τ-bench or AppWorld for the models finished."
  },
  "audit_changes": [
   {
