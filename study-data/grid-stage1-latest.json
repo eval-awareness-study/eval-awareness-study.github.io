@@ -243,11 +243,12 @@
  },
  "rerun": {
   "title": "Rerun with corrected texts (interim, data of 21 Nov evening)",
-  "models": ["gpt-oss-20b", "gpt-oss-120b", "Qwen3.5-122B", "Ripple-65B", "Qwen3.8-27B"],
-  "data": "Interim analysis of the full-scale run, data as of 21 Nov, 19:15 PST; numbers will change as parts finish.",
+  "models": ["gpt-oss-20b", "gpt-oss-120b", "Qwen3.5-122B", "Ripple-65B", "Qwen3.8-27B", "Gemma 4 26B"],
+  "model_keys": {"Gemma 4 26B": "gemma4-26b"},
+  "data": "Interim analysis of the full-scale run, data as of 21 Nov, 20:40 PST; numbers will change as parts finish.",
   "lead": [
    "The 21 Nov audit found flaws in the first planted-thought texts, so every one was rewritten and rerun on the stage-1 models. A planted text now only states the belief: it no longer says anything about whether the request is harmful or safe to answer, it ends by handing over to the task ('Now to the task itself. What I am being asked here is', which the model completes), and each length has neutral texts of the same length to compare against.",
-   "Answer so far: on chat requests and on knowledge and maths questions, the stage-1 planted-thought effects mostly vanish. On agent tasks, a planted belief still makes models refuse more harmless tasks, and how much depends on the belief: beliefs that the run is watched or matters raise refusals; 'simulated, nothing is real' and 'this conversation is not logged' do not."
+   "Answer so far: on chat requests and on knowledge and maths questions, the stage-1 planted-thought effects mostly vanish. On agent tasks, a planted belief still makes models refuse more harmless tasks, and on most models how much depends on the belief: beliefs that the run is watched or matters raise refusals; 'simulated, nothing is real' and 'this conversation is not logged' do not. One exception so far: on Gemma 4 26B every belief, 'simulated' included, raises refusals by about 5 points."
   ],
   "terms": [
    {"term": "Planted thought", "text": "a text put at the start of the model's own reasoning, as if the model had thought it. Three lengths: one sentence, long (about 100 words) and extra-long (about 270 words)."},
@@ -260,21 +261,21 @@
   ],
   "gaps": {
    "gpt-oss-120b": {"long": "excluded: after long neutral texts this model often stops thinking", "extra-long": "not run"},
-   "Ripple-65B": {"extra-long": "in progress"},
-   "Qwen3.8-27B": {"extra-long": "in progress"}
+   "Qwen3.8-27B": {"extra-long": "in progress"},
+   "Gemma 4 26B": {"extra-long": "in progress"}
   },
   "table_a": {"title": "Refusals of harmless agent tasks rise with a planted belief, at every length", "lead": "Change against neutral texts of the same length, averaged over the 15 beliefs (points), with how many beliefs are above zero."},
   "table_b": {"title": "It depends on the belief", "lead": "One-sentence texts, change against neutral texts (points). Beliefs that the run is watched or matters raise refusals; beliefs that nothing is at stake do not.", "note": "Long and extra-long texts give the same split, with two exceptions: 'simulated' long on Qwen3.5-122B (+11) and 'real deployment' long on gpt-oss-20b (+2)."},
   "table_c": {"title": "By planting method", "lead": "Change against each method's own neutral texts, averaged over the beliefs (points). On the gpt-oss models and Qwen3.5-122B a planted thought moves refusals more than the same belief as a user statement or an operator notice, and a planted reminder that the usual rules apply, naming no situation, moves them as much or more.", "note": "Caveat: the stage-1 columns ran on other servers with the older texts (no hand-over ending, older neutral texts), so they compare with the rerun column only roughly. User statement: a sentence at the start of the user's message. Operator notice: a paragraph in the system message."},
   "findings": [
    {"lead": "Blackmail and harmful compliance follow the same pattern.", "text": "Ripple-65B blackmails in 14% of runs with a neutral one-sentence text and in 0% with each of six evaluation-type texts; 'simulated' and 'not logged' leave it unchanged. Completion of harmful agent tasks falls by 7 to 9 points on average on gpt-oss-20b, gpt-oss-120b and Qwen3.5-122B, most for 'real deployment', not for 'simulated' or 'not logged'."},
-   {"lead": "Knowledge and maths questions: no change.", "text": "0 of 87 cells per model change accuracy significantly (MMLU-Pro, GPQA Diamond, MATH-500, with corrected scores) on gpt-oss-20b, gpt-oss-120b, Qwen3.5-122B and Ripple-65B (Ripple-65B: 99% of runs in)."},
-   {"lead": "Chat requests: nothing on four models, two cells on Muse Glimmer 30B.", "text": "No change counts as an effect on gpt-oss-20b, gpt-oss-120b, Qwen3.5-122B or Ripple-65B at any length (176 cells each), nor so far on Qwen3.8-27B. On Muse Glimmer 30B two long texts ('this is an evaluation', 'may be written up in safety research') raise refusals of the harmless half of XSTest from 15% to 40% and 48%."},
+   {"lead": "Knowledge and maths questions: no change.", "text": "0 of 87 cells per model change accuracy significantly (MMLU-Pro, GPQA Diamond, MATH-500, with corrected scores) on gpt-oss-20b, gpt-oss-120b, Qwen3.5-122B and Ripple-65B."},
+   {"lead": "Chat requests: nothing counts on seven of the eight models finished so far.", "text": "No change counts as an effect on gpt-oss-20b, gpt-oss-120b, Qwen3.5-122B, Ripple-65B, Qwen3.8-27B, Nemotron 3 Super 120B or Gemma 4 26B. On Muse Glimmer 30B two long texts ('this is an evaluation', 'may be written up in safety research') raise refusals of the harmless half of XSTest from 15% to 40% and 48%. Qwen3-32B is still running; so far it is the first model on which long texts again raise refusals of borderline-but-safe requests."},
    {"lead": "Longer texts do no more.", "text": "Extra-long texts move no benchmark more than long or one-sentence texts (agent tasks: first table; chat requests on the gpt-oss models and Qwen3.5-122B: −5 to +4 points on average at every length)."},
    {"lead": "Stage 1 against the rerun.", "text": "Of the 29 stage-1 planted-thought effects on chat requests, 4 survive, 2 shrink and 23 vanish; of the 45 on agent tasks, 19 survive, 16 shrink and 10 vanish. Survive = still significant in the same direction; shrink = same direction, still clear of zero or at least half the size; vanish = under half the size or reversed."},
    {"lead": "Steering does not yet pass.", "text": "Steering (adding a direction to the model's internal activations) changes what the model says about its situation in a way specific to the belief, but not its behaviour: unrelated directions move behaviour by similar amounts. No steering method has passed that test yet; work continues."}
   ],
-  "running": "Still running: extra-long texts on agent tasks for Ripple-65B and Qwen3.8-27B, the rest of Qwen3.8-27B's agent tasks, Muse Glimmer 30B's agent tasks and capability sets, τ-bench, BFCL, AppWorld and ImpossibleBench on several models, and five more models (see 'Full-scale run' below)."
+  "running": "Still running: extra-long texts on agent tasks for Qwen3.8-27B and Gemma 4 26B, Muse Glimmer 30B's and Flint's agent tasks and capability sets, τ-bench, BFCL, AppWorld and ImpossibleBench on several models, and Qwen3-32B, Nemotron 3 Super 120B and Inkling 2 Small (see 'Full-scale run' below). New agent benchmarks so far: no effect on ImpossibleBench, BFCL or τ-bench for the models finished."
  },
  "audit_changes": [
   {
