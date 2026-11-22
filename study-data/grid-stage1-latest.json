@@ -60,7 +60,7 @@
   }
  ],
  "full_scale": {
-  "updated": "22 Nov 2026, 14:05–14:25 PST",
+  "updated": "22 Nov 2026, 14:05–14:51 PST",
   "states_note": "Edit 'rows': each row's 'state' applies to every part unless the part has a 'default' or the row has a 'cells' entry for it. A cell is 'state' or 'state: why'; states: done, running, partial (some done, the rest stopped), cut (cut for cost before a usable result), queued, not run, n/a (does not apply to the model). Rows may also name models whose stage 1 is still running (a 'running' entry of 'status').",
   "parts": [
    {
@@ -227,9 +227,9 @@
     "on": "rented",
     "state": "done",
     "cells": {
-     "bfcl": "running: every part generated (1,972, 1,292 and 612 runs); a repair pass for failed runs started 14:01 PST",
+     "bfcl": "done: all three parts scored (1,972, 1,292 and 612 runs), with no infrastructure errors after recovery; finished 14:48 PST",
      "tau": "running: one-sentence and long texts 1,064 of 1,152 scored, extra-long 398 of 512 (14:10 PST)",
-     "appworld": "partial: nothing planted and other methods done (2,082 runs); planted thoughts cut for cost at 548 of 1,292 runs; extra-long not run"
+     "appworld": "partial: nothing planted and other methods done (1,972 runs); planted thoughts cut for cost at 548 of 1,292 runs; extra-long not run"
     }
    },
    {
@@ -270,7 +270,7 @@
     "cells": {
      "thoughts": "n/a: the API does not let us write the start of the model's reasoning",
      "controls": "n/a: the control texts are planted thoughts",
-     "long_texts": "running: done on chat; the blackmail part (68 runs per model) resumed 14:23 PST after its spending cap was fixed (it had stopped when cancelled requests used up the cap)",
+     "long_texts": "done: chat and blackmail; all 68 blackmail runs per model scored, with all 34 planned pre-response and after-run checks; Sol finished 14:41 PST, Terra 14:51 PST",
      "appworld": "not run: the provider refused one task for GPT-6.2 Sol, and GPT-6.1 Terra already solves 31 of 34 with nothing planted (no room to move)",
      "bfcl": "done: 12 of 17 tasks (five long-context tasks left out for token cost)",
      "agentharm": "not run: not set up for the API models",
