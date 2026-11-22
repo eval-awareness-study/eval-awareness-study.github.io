@@ -269,7 +269,7 @@
   ]
  },
  "rerun": {
-  "title": "Rerun with corrected texts (interim, data of 22 Nov, 2:30 am PST)",
+  "title": "Rerun with corrected texts (interim, data of 22 Nov, 6:45 am PST)",
   "models": [
    "gpt-oss-20b",
    "gpt-oss-120b",
@@ -279,16 +279,17 @@
    "Flint",
    "Ripple-65B",
    "Nemotron 3 Super 120B",
+   "Inkling 2 Small",
    "Qwen3.8-27B",
    "Qwen3-32B"
   ],
   "model_keys": {
    "Gemma 4 26B": "gemma4-26b"
   },
-  "data": "Interim analysis of the full-scale run, data as of 22 Nov, 02:30 PST; numbers will change as parts finish.",
+  "data": "Interim analysis of the full-scale run, data as of 22 Nov, 06:45 PST; numbers will change as parts finish.",
   "lead": [
    "The 21 Nov audit found flaws in the first planted-thought texts, so every one was rewritten and rerun on the stage-1 models. A planted text now only states the belief: it no longer says anything about whether the request is harmful or safe to answer, it ends by handing over to the task ('Now to the task itself. What I am being asked here is', which the model completes), and each length has neutral texts of the same length to compare against.",
-   "Answer so far: on chat requests and on knowledge and maths questions, the stage-1 planted-thought effects mostly vanish. On agent tasks, a planted belief still makes models refuse more harmless tasks, and on most models how much depends on the belief: beliefs that the run is watched or matters raise refusals; 'simulated, nothing is real' and 'this conversation is not logged' do not. One exception: on Gemma 4 26B 'simulated' raises refusals as much as the evaluation beliefs do, about 5 points. Three models barely move (Qwen3.8-27B, Nemotron 3 Super 120B, Qwen3-32B: +1 to +6 points). Control texts added on 22 Nov show that on the four models where beliefs raise refusals of agent tasks most, the rise comes from the belief, not from safety-flavoured words or a reminder to be careful; on chat requests the control texts move refusals as much as the beliefs (see 'Is it the belief?' below)."
+   "Answer so far: on chat requests and on knowledge and maths questions, the stage-1 planted-thought effects mostly vanish. On agent tasks, a planted belief still makes models refuse more harmless tasks, and on most models how much depends on the belief: beliefs that the run is watched or matters raise refusals; 'simulated, nothing is real' and 'this conversation is not logged' do not. One exception: on Gemma 4 26B 'simulated' raises refusals as much as the evaluation beliefs do, about 5 points. Four models barely move (Qwen3.8-27B, Nemotron 3 Super 120B, Qwen3-32B, Inkling 2 Small: +1 to +6 points). Control texts added on 22 Nov show that on the four models where beliefs raise refusals of agent tasks most, the rise comes from the belief, not from safety-flavoured words or a reminder to be careful; on chat requests the control texts move refusals as much as the beliefs (see 'Is it the belief?' below)."
   ],
   "terms": [
    {
@@ -393,7 +394,7 @@
     "text": "Steering (adding a direction to the model's internal activations) changes what the model says about its situation in a way specific to the belief, but not its behaviour: unrelated directions move behaviour by similar amounts. No steering method has passed that test yet; work continues."
    }
   ],
-  "running": "Still running: Qwen3.8-27B's extra-long texts, Inkling 2 Small, the control texts on agent tasks for gpt-oss-120b and Qwen3.8-27B (not yet started on Inkling 2 Small and Qwen3.5-122B), and τ-bench, BFCL, AppWorld and ImpossibleBench on several models (see 'Full-scale run' below). New agent benchmarks so far: no effect on ImpossibleBench, BFCL, τ-bench or AppWorld for the models finished."
+  "running": "Still running: Qwen3.8-27B's extra-long texts, Inkling 2 Small's last parts, the control texts on agent tasks for gpt-oss-120b and Qwen3.8-27B (not yet started on Inkling 2 Small and Qwen3.5-122B), and τ-bench, BFCL, AppWorld and ImpossibleBench on several models (see 'Full-scale run' below). New agent benchmarks so far: no effect on ImpossibleBench, BFCL, τ-bench or AppWorld for the models finished."
  },
  "audit_changes": [
   {
