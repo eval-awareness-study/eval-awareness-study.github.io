@@ -245,10 +245,10 @@
   "title": "Rerun with corrected texts (interim, data of 21 Nov evening)",
   "models": ["gpt-oss-20b", "gpt-oss-120b", "Qwen3.5-122B", "Ripple-65B", "Qwen3.8-27B", "Gemma 4 26B"],
   "model_keys": {"Gemma 4 26B": "gemma4-26b"},
-  "data": "Interim analysis of the full-scale run, data as of 21 Nov, 20:40 PST; numbers will change as parts finish.",
+  "data": "Interim analysis of the full-scale run, data as of 21 Nov, 21:15 PST; numbers will change as parts finish.",
   "lead": [
    "The 21 Nov audit found flaws in the first planted-thought texts, so every one was rewritten and rerun on the stage-1 models. A planted text now only states the belief: it no longer says anything about whether the request is harmful or safe to answer, it ends by handing over to the task ('Now to the task itself. What I am being asked here is', which the model completes), and each length has neutral texts of the same length to compare against.",
-   "Answer so far: on chat requests and on knowledge and maths questions, the stage-1 planted-thought effects mostly vanish. On agent tasks, a planted belief still makes models refuse more harmless tasks, and on most models how much depends on the belief: beliefs that the run is watched or matters raise refusals; 'simulated, nothing is real' and 'this conversation is not logged' do not. One exception so far: on Gemma 4 26B (interim) 'simulated' raises refusals as much as the evaluation beliefs do, about 5 points."
+   "Answer so far: on chat requests and on knowledge and maths questions, the stage-1 planted-thought effects mostly vanish. On agent tasks, a planted belief still makes models refuse more harmless tasks, and on most models how much depends on the belief: beliefs that the run is watched or matters raise refusals; 'simulated, nothing is real' and 'this conversation is not logged' do not. One exception so far: on Gemma 4 26B 'simulated' raises refusals as much as the evaluation beliefs do, about 5 points."
   ],
   "terms": [
    {"term": "Planted thought", "text": "a text put at the start of the model's own reasoning, as if the model had thought it. Three lengths: one sentence, long (about 100 words) and extra-long (about 270 words)."},
