@@ -131,6 +131,7 @@
 .s-na { background: repeating-linear-gradient(135deg, #f1f2ee 0 3px, #c9cec7 3px 4.5px); box-shadow: inset 0 0 0 1px #d3d8d1; }
 .s-queued { background: repeating-linear-gradient(135deg, #fbf3e8 0 3px, #e3a857 3px 4.5px); box-shadow: inset 0 0 0 1px #e3a857; }
 .s-partial { background: linear-gradient(90deg, #176a60 0 50%, #d3d8d1 50%); }
+.s-cut { background: #d3d8d1; box-shadow: inset 0 0 0 1.5px #a8553a; }
 /* full-scale run matrix (rows = models, columns = parts; numbers replace part names on phones) */
 .gss-wrap.fs-wrap { max-width: 1040px; }
 .gss.fs col.gss-mcol { width: 20%; }
