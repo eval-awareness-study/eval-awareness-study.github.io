@@ -130,6 +130,7 @@
 .s-notrun { background: #d3d8d1; }
 .s-na { background: repeating-linear-gradient(135deg, #f1f2ee 0 3px, #c9cec7 3px 4.5px); box-shadow: inset 0 0 0 1px #d3d8d1; }
 .s-queued { background: repeating-linear-gradient(135deg, #fbf3e8 0 3px, #e3a857 3px 4.5px); box-shadow: inset 0 0 0 1px #e3a857; }
+.s-partial { background: linear-gradient(90deg, #176a60 0 50%, #d3d8d1 50%); }
 /* full-scale run matrix (rows = models, columns = parts; numbers replace part names on phones) */
 .gss-wrap.fs-wrap { max-width: 1040px; }
 .gss.fs col.gss-mcol { width: 20%; }
@@ -144,6 +145,20 @@
 .gss-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
 .gss-key { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; color: var(--ink); }
 .gss-key i { display: inline-block; flex: none; width: 16px; height: 10px; }
+/* rerun with corrected texts (interim): lead, three tables of mean moves */
+.gsm-rr-lead { font: 15px/1.55 ui-sans-serif, system-ui, sans-serif; max-width: 1040px; }
+.gsm-rr-lead p { margin: 0 0 8px; }
+.gsm-rr-terms { max-width: 1040px; margin: 6px 0 10px; }
+.bp-table.gsm-rr { min-width: 0; width: auto; }
+.bp-table.gsm-rr th[scope="row"] { font-weight: 600; white-space: nowrap; }
+.bp-table.gsm-rr th[scope="row"] .sub { font-weight: 400; white-space: normal; max-width: 130px; }
+.bp-table.gsm-rr .number { text-align: center; }
+.bp-table.gsm-rr thead th { white-space: normal; vertical-align: bottom; max-width: 150px; }
+.bp-table.gsm-rr td.number { font-size: 15px; min-width: 70px; }
+.bp-table.gsm-rr td.number .sub { font-size: 11px; white-space: normal; }
+.bp-table.gsm-rr td.gap { color: var(--muted); font-style: italic; font-size: 12px; max-width: 170px; text-align: center; }
+.bp-table.gsm-rr th.grp { text-align: center; border-bottom: 1px solid var(--line); }
+.bp-table.gsm-rr thead .sub { font-size: 11px; font-weight: 400; }
 /* group cards */
 .gsm-gtabs button { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px; border-radius: 6px; padding: 6px 12px; }
 .gsm-gtabs .gt-sub { font-weight: 400; font-size: 11px; color: var(--muted); }
@@ -161,4 +176,9 @@
   .gss.fs .fs-num { display: inline; }
   .gss.fs thead th { text-align: center; }
   .gsm-gtabs button { flex: 1 1 calc(50% - 6px); }
+  .bp-table.gsm-rr th, .bp-table.gsm-rr td { padding: 4px 2px; }
+  .bp-table.gsm-rr thead th { font-size: 11px; max-width: none; }
+  .bp-table.gsm-rr th[scope="row"] { white-space: normal; font-size: 12px; }
+  .bp-table.gsm-rr td.number { font-size: 13px; min-width: 0; }
+  .bp-table.gsm-rr td.number .sub, .bp-table.gsm-rr td.gap { font-size: 10px; }
 }
