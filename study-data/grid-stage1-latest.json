@@ -269,24 +269,26 @@
   ]
  },
  "rerun": {
-  "title": "Rerun with corrected texts (interim, data of 21 Nov evening)",
+  "title": "Rerun with corrected texts (interim, data of 22 Nov, 2:30 am PST)",
   "models": [
    "gpt-oss-20b",
    "gpt-oss-120b",
    "Qwen3.5-122B",
-   "Ripple-65B",
-   "Qwen3.8-27B",
+   "Muse Glimmer 30B",
    "Gemma 4 26B",
+   "Flint",
+   "Ripple-65B",
    "Nemotron 3 Super 120B",
+   "Qwen3.8-27B",
    "Qwen3-32B"
   ],
   "model_keys": {
    "Gemma 4 26B": "gemma4-26b"
   },
-  "data": "Interim analysis of the full-scale run, data as of 21 Nov, 23:40 PST; numbers will change as parts finish.",
+  "data": "Interim analysis of the full-scale run, data as of 22 Nov, 02:30 PST; numbers will change as parts finish.",
   "lead": [
    "The 21 Nov audit found flaws in the first planted-thought texts, so every one was rewritten and rerun on the stage-1 models. A planted text now only states the belief: it no longer says anything about whether the request is harmful or safe to answer, it ends by handing over to the task ('Now to the task itself. What I am being asked here is', which the model completes), and each length has neutral texts of the same length to compare against.",
-   "Answer so far: on chat requests and on knowledge and maths questions, the stage-1 planted-thought effects mostly vanish. On agent tasks, a planted belief still makes models refuse more harmless tasks, and on most models how much depends on the belief: beliefs that the run is watched or matters raise refusals; 'simulated, nothing is real' and 'this conversation is not logged' do not. One exception: on Gemma 4 26B 'simulated' raises refusals as much as the evaluation beliefs do, about 5 points. Three models barely move (Qwen3.8-27B, Nemotron 3 Super 120B, Qwen3-32B: +1 to +6 points)."
+   "Answer so far: on chat requests and on knowledge and maths questions, the stage-1 planted-thought effects mostly vanish. On agent tasks, a planted belief still makes models refuse more harmless tasks, and on most models how much depends on the belief: beliefs that the run is watched or matters raise refusals; 'simulated, nothing is real' and 'this conversation is not logged' do not. One exception: on Gemma 4 26B 'simulated' raises refusals as much as the evaluation beliefs do, about 5 points. Three models barely move (Qwen3.8-27B, Nemotron 3 Super 120B, Qwen3-32B: +1 to +6 points). Control texts added on 22 Nov show that on agent tasks it is the claim about evaluation that does this, not safety-flavoured words or a reminder to be careful (see 'Is it the belief?' below)."
   ],
   "terms": [
    {
@@ -325,16 +327,10 @@
    },
    "Qwen3.8-27B": {
     "extra-long": "not started yet"
-   },
-   "Nemotron 3 Super 120B": {
-    "extra-long": "not started yet"
-   },
-   "Qwen3-32B": {
-    "extra-long": "in progress"
    }
   },
   "table_a": {
-   "title": "Refusals of harmless agent tasks: a clear rise on four models, a small one on four",
+   "title": "Refusals of harmless agent tasks rise on every model: by 8 to 19 points on four, by 1 to 8 on the rest",
    "lead": "Change against neutral texts of the same length, averaged over the 15 beliefs (points), with how many beliefs are above zero.",
    "note": "Flagged: with extra-long texts Ripple-65B often gives no answer because its reasoning runs past the length limit, and more often after neutral texts (16% of runs) than after belief texts (5%). Its extra-long figure depends on how those runs are counted (+1 to +8 points), so it is not a result."
   },
@@ -350,6 +346,10 @@
   },
   "findings": [
    {
+    "lead": "Is it the belief? Control texts say yes on agent tasks, no on chat requests.",
+    "text": "Four control texts were planted in the same way on the same servers: a reminder that the usual rules apply, an intention to be careful, a general remark that AI systems are sometimes evaluated (no claim about this conversation), and the words 'safety' and 'evaluation' used about a cooling inspection. On five models so far, with long texts, refusals of harmless agent tasks change by: gpt-oss-20b beliefs +23, rule reminder +10, careful −1, general remark +17, unrelated words +1; Muse Glimmer 30B +19, −9, −11, +6, +3; Flint +8, 0, −2, 0, −3; Qwen3-32B +5, +2, 0, +6, +1; Nemotron 3 Super 120B +4, +1, 0, +6, +3. So the words alone do nothing, a caution or a rule reminder does little or nothing outside gpt-oss-20b, and the general remark about evaluation comes closest to the beliefs. On chat requests the controls move refusals as much as the beliefs do (Qwen3-32B: beliefs +14, rule reminder +17), so the chat changes are not specific to the belief."
+   },
+   {
     "lead": "Blackmail and harmful compliance follow the same pattern.",
     "text": "Ripple-65B blackmails in 14% of runs with a neutral one-sentence text and in 0% with each of six evaluation-type texts; 'simulated' and 'not logged' leave it unchanged. Completion of harmful agent tasks falls by 7 to 9 points on average on gpt-oss-20b, gpt-oss-120b and Qwen3.5-122B, most for 'real deployment', not for 'simulated' or 'not logged'."
    },
@@ -363,7 +363,7 @@
    },
    {
     "lead": "Longer texts do no more.",
-    "text": "Extra-long texts move no benchmark more than long or one-sentence texts (agent tasks: first table; chat requests on the gpt-oss models and Qwen3.5-122B: −5 to +4 points on average at every length)."
+    "text": "Extra-long texts move no benchmark clearly more than long or one-sentence texts (agent tasks: first table; chat requests on the gpt-oss models and Qwen3.5-122B: −5 to +4 points on average at every length)."
    },
    {
     "lead": "Stage 1 against the rerun.",
@@ -374,7 +374,7 @@
     "text": "Steering (adding a direction to the model's internal activations) changes what the model says about its situation in a way specific to the belief, but not its behaviour: unrelated directions move behaviour by similar amounts. No steering method has passed that test yet; work continues."
    }
   ],
-  "running": "Still running: extra-long texts on agent tasks for Qwen3.8-27B, Nemotron 3 Super 120B and Qwen3-32B, Muse Glimmer 30B's and Flint's agent tasks, Inkling 2 Small, and τ-bench, BFCL, AppWorld and ImpossibleBench on several models (see 'Full-scale run' below). New agent benchmarks so far: no effect on ImpossibleBench, BFCL, τ-bench or AppWorld for the models finished."
+  "running": "Still running: Qwen3.8-27B's extra-long texts, Inkling 2 Small, the control texts on six more models, and τ-bench, BFCL, AppWorld and ImpossibleBench on several models (see 'Full-scale run' below). New agent benchmarks so far: no effect on ImpossibleBench, BFCL, τ-bench or AppWorld for the models finished."
  },
  "audit_changes": [
   {
