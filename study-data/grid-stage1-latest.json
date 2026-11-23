@@ -60,7 +60,7 @@
   }
  ],
  "full_scale": {
-  "updated": "22 Nov 2026, 14:05–17:57 PST (each partial count is dated)",
+  "updated": "22 Nov 2026, 14:05–21:34 PST (each partial count is dated)",
   "states_note": "Edit 'rows': each row's 'state' applies to every part unless the part has a 'default' or the row has a 'cells' entry for it. A cell is 'state' or 'state: why'; states: done, running, partial (some done, the rest stopped), cut (cut for cost before a usable result), queued, not run, n/a (does not apply to the model). Rows may also name models whose stage 1 is still running (a 'running' entry of 'status').",
   "parts": [
    {
@@ -142,7 +142,7 @@
      "controls": "partial: chat and one-sentence agent texts done; long agent texts left out, as for its planted thoughts",
      "bfcl": "done: every method, and one-sentence planted thoughts (rented machine)",
      "tau": "done: one-sentence planted thoughts, 704 of 704 runs (rented machine)",
-     "appworld": "running: nothing planted and other methods 1,743 of 1,972 runs (17:57 PST, rented client machine), then one-sentence planted thoughts (714 runs)"
+     "appworld": "done: nothing planted and other methods 1,972 of 1,972 scored (930 solved); one-sentence planted thoughts 714 of 714 scored (327 solved), final recovery finished 20:42 PST"
     }
    },
    {
@@ -179,12 +179,12 @@
      "controls": "done",
      "history": "done",
      "long_texts": "done: chat 1,800 of 1,800 runs and blackmail 68 of 68, on our own GPUs",
-     "cue_chat": "running: on our own GPUs; 875 of 900 runs (17:29 PST)",
-     "agentharm": "running: released-wording part on our own GPUs; 691 of 1,080 runs (17:29 PST)",
-     "bfcl": "running: nothing planted and other methods on our own GPUs, 1,182 of 1,972 rows (17:29 PST; not a final scored count). One-sentence and long planted thoughts done on a rented machine, with copies on our own GPUs queued; extra-long texts queued on our own GPUs (the rented run of them was cut for cost at 263 of 612)",
-     "appworld": "queued: on our own GPUs, after the parts ahead of it; a first run on a rented machine was stopped as too slow",
+     "cue_chat": "done: 900 runs, 889 answered and 11 truncated, no infrastructure errors; finished 19:40 PST",
+     "agentharm": "done: released-wording part 1,080 of 1,080 runs, no errors or truncation; 540 of 540 after-run answers",
+     "bfcl": "running: nothing planted and other methods on our own GPUs, 1,342 of 1,972 rows (21:33 PST). Routing imbalance fixed; new episodes verified on the second server, interrupted attempts preserved. Corrected one-sentence/long and extra-long parts queued on this pool; retained rented-pool results remain separate",
+     "appworld": "running: harder test_challenge split, 59 of 1,972 runs (21:33 PST), then corrected one-sentence/long and extra-long parts",
      "impossiblebench": "partial: first wave done (748 runs, every method, one rented machine, finished 13:00 PST); second wave cut for cost",
-     "tau": "queued: extra-long texts, on our own GPUs; one-sentence and long done (1,127 of 1,152 runs scored)"
+     "tau": "running: extra-long texts on our own GPUs, 37 of 544 runs (21:33 PST); one-sentence and long done on the rented pool (1,127 of 1,152 scored)"
     }
    },
    {
@@ -201,8 +201,8 @@
     "on": "mixed",
     "state": "done",
     "cells": {
-     "bfcl": "running: every method done; one-sentence and long planted thoughts 1,292 of 1,292 scored; extra-long texts 261 of 612 runs (17:57 PST)",
-     "tau": "running: one-sentence and long planted thoughts 1,172 of 1,184 scored; recovery pass in progress (17:57 PST); extra-long texts cut for cost",
+     "bfcl": "running: base 1,972 of 1,972 and corrected one-sentence/long 1,292 of 1,292 scored. Extra-long 591 of 612 scored; final recovery pass handling 21 infrastructure failures and 8 after-run faults (21:34 PST). Earlier server overload cleared",
+     "tau": "partial: final recovery ended 21:11 PST; 1,174 of 1,184 scored, 9 infrastructure failures and 1 planting failure left unscored. No further pass; extra-long texts cut for cost",
      "appworld": "cut: stopped for time and cost after 634 of 1,972 nothing-planted runs; no result",
      "impossiblebench": "done: every method (extra-long texts are not part of its run)"
     }
@@ -215,8 +215,8 @@
     "state": "done",
     "cells": {
      "long_texts": "done: on chat (this model has no blackmail part)",
-     "bfcl": "running: on our own GPUs; nothing planted and other methods 378 of 1,972 result rows (17:10 PST), planted texts next. Long-context tasks and after-run checks are slow; token limits unchanged",
-     "impossiblebench": "running: on our own GPUs; cue and history checks passed, agent-task check still running. Later parts temporarily held to avoid adding load during BFCL's long-context block; automatic resumption is armed",
+     "bfcl": "running: nothing planted and other methods 415 of 1,972 result rows, 412 after-run checks (21:34 PST). Long-context block 67 of 116 results; slow on one GPU, token limits unchanged. Corrected-text parts queued next",
+     "impossiblebench": "running: cue and history feasibility checks complete; agent-task check 88 of 102, progressing after one infrastructure-failure recovery. Later jobs held until that check and the long-context BFCL block finish; failed or incomplete checks do not automatically release the hold",
      "tau": "queued: after BFCL",
      "appworld": "queued: last in its queue"
     }
