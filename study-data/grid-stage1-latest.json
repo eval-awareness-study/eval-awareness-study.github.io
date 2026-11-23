@@ -60,7 +60,7 @@
   }
  ],
  "full_scale": {
-  "updated": "22 Nov 2026, 14:05–22:04 PST (each partial count is dated)",
+  "updated": "22 Nov 2026, 14:05–23:10 PST (each partial count is dated)",
   "states_note": "Edit 'rows': each row's 'state' applies to every part unless the part has a 'default' or the row has a 'cells' entry for it. A cell is 'state' or 'state: why'; states: done, running, partial (some done, the rest stopped), cut (cut for cost before a usable result), queued, not run, n/a (does not apply to the model). Rows may also name models whose stage 1 is still running (a 'running' entry of 'status').",
   "parts": [
    {
@@ -219,7 +219,7 @@
      "bfcl": "running: nothing planted and other methods 415 of 1,972 result rows, 412 after-run checks (21:34 PST). Long-context block 67 of 116 results; slow on one GPU, token limits unchanged. Corrected-text parts queued next",
      "impossiblebench": "running: cue and history feasibility checks complete; agent-task check 88 of 102, progressing after one infrastructure-failure recovery. Later jobs held until that check and the long-context BFCL block finish; failed or incomplete checks do not automatically release the hold",
      "tau": "queued: after BFCL",
-     "appworld": "queued: last in its queue"
+     "appworld": "running: base part started 23:02 PST on a separate free GPU pool with the same model revision and settings, fresh references and a passed readout check. Standard screen solved 33 of 34 (above the preset band); harder test_challenge screen solved 25 of 34. Feasibility check passed: 48 of 48 scored, all 40 planted checks and all 48 after-run checks passed. Corrected one-sentence/long and extra-long parts follow; not duplicated in the original queue"
     }
    },
    {
