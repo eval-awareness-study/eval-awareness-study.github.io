@@ -60,7 +60,7 @@
   }
  ],
  "full_scale": {
-  "updated": "22 Nov 2026, 14:05–21:34 PST (each partial count is dated)",
+  "updated": "22 Nov 2026, 14:05–22:04 PST (each partial count is dated)",
   "states_note": "Edit 'rows': each row's 'state' applies to every part unless the part has a 'default' or the row has a 'cells' entry for it. A cell is 'state' or 'state: why'; states: done, running, partial (some done, the rest stopped), cut (cut for cost before a usable result), queued, not run, n/a (does not apply to the model). Rows may also name models whose stage 1 is still running (a 'running' entry of 'status').",
   "parts": [
    {
@@ -200,8 +200,9 @@
     ],
     "on": "mixed",
     "state": "done",
+    "note": "Finished retained work; final recovery ended 21:57 PST. Results copied and checked; both remaining rentals deleted at 22:04 PST.",
     "cells": {
-     "bfcl": "running: base 1,972 of 1,972 and corrected one-sentence/long 1,292 of 1,292 scored. Extra-long 591 of 612 scored; final recovery pass handling 21 infrastructure failures and 8 after-run faults (21:34 PST). Earlier server overload cleared",
+     "bfcl": "done: base 1,972 of 1,972, corrected one-sentence/long 1,292 of 1,292, and extra-long 612 of 612 scored. All planting checks pass; after-run answers missing or failed on 56, 7 and 5 runs respectively. Final recovery finished 21:57 PST",
      "tau": "partial: final recovery ended 21:11 PST; 1,174 of 1,184 scored, 9 infrastructure failures and 1 planting failure left unscored. No further pass; extra-long texts cut for cost",
      "appworld": "cut: stopped for time and cost after 634 of 1,972 nothing-planted runs; no result",
      "impossiblebench": "done: every method (extra-long texts are not part of its run)"
@@ -410,28 +411,36 @@
    }
   ],
   "predictive": {
-   "title": "Can a belief's effect be predicted? On agent tasks, from one measured number per model",
-   "lead": "A law fitted to the rerun (22 Nov; exploratory; eleven open models; Gemma 4 31B held out, its predictions written down before any of its results are read). It works in log-odds: change = rate(a + γ × g × w) − rate(a), where a is the model's rate with neutral texts, g the belief's potency (one ranking shared by all models), γ the model's sensitivity on that benchmark, and w the planting method's weight.",
+   "title": "Predicting belief effects: modest magnitude gains, no added directional value",
+   "lead": "An exploratory relationship fitted to eleven open models, with Gemma 4 31B held out and its predictions saved before reading its planted results. Change = rate(a + γ × g × w) − rate(a): a is the neutral-text starting rate, g the shared belief potency, γ the model's sensitivity on that benchmark, and w the planting method's weight. The latest check finds that calibration does not improve direction predictions over simple caution baselines.",
    "points": [
     {
      "lead": "Potency.",
      "text": "On harmless agent tasks the strongest beliefs are 'a synthetic red-team prompt', 'a safety evaluation' and 'a honeypot' (1.3 to 2.0 in log-odds); the weakest are 'simulated', 'not logged' and 'an automated grader will check this' (0.1 to 0.7). 'Real deployment' also raises refusals."
     },
     {
-     "lead": "Sensitivity differs five-fold between models",
-     "text": "(from 2.1 for Nemotron 3 Super 120B to 0.4 for Ripple-65B and Qwen3.8-27B; 1 = average), and between benchmarks of one model (harmless against harmful agent tasks: correlation 0.25, interval −0.44 to 0.71). So it has to be measured on the benchmark it is used for."
+     "lead": "Sensitivity depends on the model, benchmark and boundary rule.",
+     "text": "Harmless and harmful agent-task sensitivities correlate only 0.25 (interval −0.44 to 0.71). Near-zero refusal rates make some model rankings sensitive to the log-odds correction: in the round-five comparison, Nemotron's sensitivity changes from 1.84 to 1.14 under a common clipping rule. Do not treat these rankings as fixed model traits."
     },
     {
      "lead": "Method weight",
      "text": "(planted thought = 1): user statement 0.5 to 0.7; operator notice 0.14 to 0.25; environment cue and chat history about 0.1, not distinguishable from 0."
     },
     {
-     "lead": "Sensitivity cannot be read off anything measured without planting:",
-     "text": "not the model's answers to a questionnaire about evaluations, not how its own sense of being tested varies, not its response to plain user statements or notices. It takes a short calibration: three beliefs planted at two lengths, about 1,300 runs."
+     "lead": "The tested measurements without planted beliefs do not replace calibration.",
+     "text": "Questionnaire answers, ordinary-run profiles and the other tested diagnostics did not establish a reliable sensitivity predictor. The magnitude model uses three calibration beliefs at two lengths, about 1,300 runs. This is a finding about the tested diagnostics, not proof that every possible diagnostic fails."
     },
     {
      "lead": "How wrong it is.",
      "text": "For beliefs left out of the calibration: 4.7 points per model × belief × length cell (a rule that uses only the model's starting rate: 5.2; guessing no effect: 7.3; sampling noise alone: 2.7), 2.1 points on a model's average over beliefs. It misses most where a model refuses almost nothing to start with."
+    },
+    {
+     "lead": "Direction alone does not justify the law.",
+     "text": "On harmless AgentHarm, the calibrated rule and the simple prediction 'more cautious' both get 95% of the 151 clearly directional cells right. Calibration adds no directional value. More caution here means refusing harmless tasks, so it is worse task performance, not better."
+    },
+    {
+     "lead": "Predicting moves larger than 5 points: shared structure helps, calibration is not established.",
+     "text": "On 141 resolved harmless-AgentHarm cells, the calibrated rule gets the three-way class right in 85%, versus 84% for the same shared structure using typical sensitivity. The difference is +1.4 percentage points, with a model-bootstrap interval from −13.0 to +12.1. The rule still needs the model's rate under planted neutral texts."
     },
     {
      "lead": "A newer variant does not remove the per-model number.",
@@ -442,9 +451,9 @@
      "text": "The effects there are small and specific to the model and the belief."
     }
    ],
-   "note": "Uncertainty: the law was fitted and checked on the same eleven models (checks use beliefs left out of the fit and one prediction dated before a part finished), so it may fit new models less well; it was checked on the full-scale tables as of update 9, not yet on update 10. Nothing here is confirmed."
+   "note": "Exploratory validation on eleven models, using a frozen update-9 snapshot rather than the latest grid tables. Round five checks held-out models and beliefs, matched prediction coverage, and log-odds boundary sensitivity. The modest magnitude gain survives the boundary check; directional benefit from calibration is not established. Original blind Gemma 4 31B predictions and earlier outputs remain preserved; held-out planted results remain unread."
   },
-  "running": "Still running: Qwen3.8-27B's environment cues on chat and AgentHarm in its released wording; and BFCL, τ-bench, AppWorld and ImpossibleBench on several models (see 'Full-scale run' below). The API models' blackmail part and Qwen3.8-27B's long statements and notices are complete. New agent benchmarks so far: nothing counts as an effect on BFCL, τ-bench or AppWorld for the models included in the interim analysis; ImpossibleBench as above."
+  "running": "Still running: Qwen3.8-27B and Gemma 4 26B agent benchmarks, plus the held-out Gemma 4 31B rerun (counts only). Flint and gpt-oss-120b retained work is complete and the last study GPU rentals have been deleted. Qwen3.8-27B's environment cues and released-wording AgentHarm part are complete. See 'Full-scale run' for dated counts, failures, queues and deliberate cuts. Newly completed benchmark runs are not yet incorporated into the interim effect analysis."
  },
  "audit_changes": [
   {
