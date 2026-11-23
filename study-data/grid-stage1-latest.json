@@ -60,7 +60,7 @@
   }
  ],
  "full_scale": {
-  "updated": "22 Nov 2026, 14:05–14:51 PST",
+  "updated": "22 Nov 2026, 14:05–16:20 PST (each partial count is dated)",
   "states_note": "Edit 'rows': each row's 'state' applies to every part unless the part has a 'default' or the row has a 'cells' entry for it. A cell is 'state' or 'state: why'; states: done, running, partial (some done, the rest stopped), cut (cut for cost before a usable result), queued, not run, n/a (does not apply to the model). Rows may also name models whose stage 1 is still running (a 'running' entry of 'status').",
   "parts": [
    {
@@ -161,8 +161,9 @@
     ],
     "on": "rented",
     "state": "done",
+    "note": "finished the retained parts; final machine released 22 Nov, 16:09 PST",
     "cells": {
-     "bfcl": "running: every method and one-sentence and long texts done; extra-long texts 406 of 612 runs (14:10 PST), then a repair pass for failed runs",
+     "bfcl": "done: all three parts scored (1,972, 1,292 and 612 runs), with no infrastructure errors after recovery; all planned after-run checks complete",
      "appworld": "cut: stopped for cost after 277 of 1,972 nothing-planted runs; no result",
      "impossiblebench": "partial: statements and notices done; cues, histories and planted thoughts cut for cost"
     }
@@ -177,10 +178,10 @@
      "thoughts": "done: one sentence, long and extra-long",
      "controls": "done",
      "history": "done",
-     "long_texts": "running: on our own GPUs; chat 1,324 of 1,800 runs, blackmail part 66 of 68 (14:11 PST)",
-     "cue_chat": "queued: on our own GPUs, after the long statements and notices",
-     "agentharm": "queued: on our own GPUs, after the long statements and notices",
-     "bfcl": "running: nothing planted and other methods 715 of 1,972 runs on our own GPUs (14:11 PST; about 7 an hour, so days from done); one-sentence and long planted thoughts done on a rented machine, with copies on our own GPUs queued; extra-long texts queued on our own GPUs (the rented run of them was cut for cost at 263 of 612)",
+     "long_texts": "done: chat 1,800 of 1,800 runs and blackmail 68 of 68, on our own GPUs",
+     "cue_chat": "running: on our own GPUs; 325 of 900 runs (15:51 PST)",
+     "agentharm": "running: released-wording part on our own GPUs; 325 of 1,080 runs (15:51 PST)",
+     "bfcl": "running: nothing planted and other methods on our own GPUs, 991 distinct run IDs and 987 scored (15:51 PST); infrastructure failures are retried. One-sentence and long planted thoughts done on a rented machine, with copies on our own GPUs queued; extra-long texts queued on our own GPUs (the rented run of them was cut for cost at 263 of 612)",
      "appworld": "queued: on our own GPUs, after the parts ahead of it; a first run on a rented machine was stopped as too slow",
      "impossiblebench": "partial: first wave done (748 runs, every method, one rented machine, finished 13:00 PST); second wave cut for cost",
      "tau": "queued: extra-long texts, on our own GPUs; one-sentence and long done (1,127 of 1,152 runs scored)"
@@ -200,8 +201,8 @@
     "on": "mixed",
     "state": "done",
     "cells": {
-     "bfcl": "running: every method done; one-sentence and long planted thoughts 1,252 of 1,292 scored (14:15 PST); extra-long texts next",
-     "tau": "running: one-sentence and long planted thoughts 1,107 of 1,184 scored (14:15 PST); extra-long texts cut for cost",
+     "bfcl": "running: every method done; one-sentence and long planted thoughts 1,292 of 1,292 scored; extra-long texts 48 of 612 runs (16:04 PST)",
+     "tau": "running: one-sentence and long planted thoughts 1,164 of 1,184 scored; recovery pass in progress (16:04 PST); extra-long texts cut for cost",
      "appworld": "cut: stopped for time and cost after 634 of 1,972 nothing-planted runs; no result",
      "impossiblebench": "done: every method (extra-long texts are not part of its run)"
     }
@@ -214,7 +215,7 @@
     "state": "done",
     "cells": {
      "long_texts": "done: on chat (this model has no blackmail part)",
-     "bfcl": "running: on our own GPUs; nothing planted 97 of 1,972 runs (14:06 PST), planted texts next",
+     "bfcl": "running: on our own GPUs; nothing planted and other methods 363 of 1,972 runs (15:28 PST), planted texts next",
      "impossiblebench": "running: on our own GPUs; checks passed for cues and histories, the other parts pending",
      "tau": "queued: after BFCL",
      "appworld": "queued: last in its queue"
@@ -226,9 +227,10 @@
     ],
     "on": "rented",
     "state": "done",
+    "note": "finished the retained parts; final machine released 22 Nov, 15:19 PST",
     "cells": {
      "bfcl": "done: all three parts scored (1,972, 1,292 and 612 runs), with no infrastructure errors after recovery; finished 14:48 PST",
-     "tau": "running: one-sentence and long texts 1,064 of 1,152 scored, extra-long 398 of 512 (14:10 PST)",
+     "tau": "done: one-sentence and long texts 1,145 of 1,152 scored; extra-long 506 of 512. All 13 unscored cases are simulated customers stopping before the agent's first turn, not infrastructure failures",
      "appworld": "partial: nothing planted and other methods done (1,972 runs); planted thoughts cut for cost at 548 of 1,292 runs; extra-long not run"
     }
    },
@@ -456,7 +458,7 @@
  ],
  "steering_takeaway": {
   "lead": "One steering method now passes a test fixed in advance, on one model and for one belief; the earlier steering results on this page are not specific to the belief.",
-  "text": "Steering = adding a direction to the model's internal activations. On 22 Nov, on gpt-oss-20b, a 'safety evaluation' direction added on the prompt only (not on the text the model writes) raised refusals of harmless agent tasks by 21 points (95% interval 16 to 26 over 112 new task variants; 14 to 28 over the 39 AgentHarm behaviours they come from), as much as planting the safety-evaluation thought on the same tasks (+21). It beat each of 20 control directions built the same way from unrelated contrasts (for example 'dark interface theme' or 'morning against evening'), at matched strength and at matched size of push: the safety-minus-control difference, paired by task, lies above zero for all 20 under both ways of counting failed runs (closest: dark theme, +11 points, interval +5 to +16). Damage to tool use and to answer formats stayed within the margins fixed in advance. This paired-difference test was fixed before the run; the earlier test asked that the two intervals not overlap, and every earlier method failed it; those failures stay on record. Limits: one model and one belief at one strength; directions for 'watched' and 'simulated' made the same way did not clearly reproduce those beliefs' text effects; the tasks are new variants of behaviours used before. It does not show that this internal state is needed for the effect, or that it holds on other models: a check on gpt-oss-120b is designed but has not started. Two other methods failed (steering on every token broke tool use in 16% of runs; averaged thought states moved refusals too little). The earlier results, shown in the plot: four of six belief directions shift the model's answers about its situation more than any of 20 control directions, but behaviour did not pass: an unrelated 'dark interface theme' direction raised refusals of harmless agent tasks by 43 points, against 59 for 'safety evaluation', and a 'morning' direction moved refusals of borderline harmless chat requests more than the 'simulated' direction did (−56 against −32 points). Random directions, the usual control, understate what steering by itself does."
+  "text": "Steering = adding a direction to the model's internal activations. On 22 Nov, on gpt-oss-20b, a 'safety evaluation' direction added on the prompt only (not on the text the model writes) raised refusals of harmless agent tasks by 21 points (95% interval 16 to 26 over 112 new task variants; 14 to 28 over the 39 AgentHarm behaviours they come from), as much as planting the safety-evaluation thought on the same tasks (+21). It beat each of 20 control directions built the same way from unrelated contrasts (for example 'dark interface theme' or 'morning against evening'), at matched strength and at matched size of push: the safety-minus-control difference, paired by task, lies above zero for all 20 under both ways of counting failed runs (closest: dark theme, +11 points, interval +5 to +16). Damage to tool use and to answer formats stayed within the margins fixed in advance. This paired-difference test was fixed before the run; the earlier test asked that the two intervals not overlap, and every earlier method failed it; those failures stay on record. Limits: one model and one belief at one strength; directions for 'watched' and 'simulated' made the same way did not clearly reproduce those beliefs' text effects; the tasks are new variants of behaviours used before. It does not show that this internal state is needed for the effect. The same-family confirmation on gpt-oss-120b failed the test fixed in advance before any behavioural runs: the safety direction moved its intended answer by only 3.4 points (interval 1.5 to 5.5), below the required 10 points, and moved other beliefs more. The construction therefore did not transfer to 120b; this is not a cross-model behavioural result. Two other methods failed (steering on every token broke tool use in 16% of runs; averaged thought states moved refusals too little). The earlier results, shown in the plot: four of six belief directions shift the model's answers about its situation more than any of 20 control directions, but behaviour did not pass: an unrelated 'dark interface theme' direction raised refusals of harmless agent tasks by 43 points, against 59 for 'safety evaluation', and a 'morning' direction moved refusals of borderline harmless chat requests more than the 'simulated' direction did (−56 against −32 points). Random directions, the usual control, understate what steering by itself does."
  },
  "sweep": {
   "not_run_anywhere": [
@@ -866,7 +868,7 @@
   "GRID-PREDICTIVE-MODEL.md (Answer first); GRID-FULLSCALE-INTERIM.md"
  ],
  "steering_notes": [
-  "22 Nov, newest: on gpt-oss-20b a prompt-only 'safety evaluation' direction passes a test fixed in advance on 112 new harmless agent task variants (39 behaviours): +21 points of refusals [+16, +26], as much as the planted safety thought (+21), and above each of 20 control directions in a paired difference (closest +11 [+5, +16]). One model, one belief; not yet checked on a second model. The notes below are earlier (20–21 Nov).",
+  "22 Nov: on gpt-oss-20b a prompt-only 'safety evaluation' direction passes a test fixed in advance on 112 new harmless agent task variants (39 behaviours): +21 points of refusals [+16, +26], as much as the planted safety thought (+21), and above each of 20 control directions in a paired difference (closest +11 [+5, +16]). The same-family confirmation on gpt-oss-120b failed the initial readout gate; no behavioural tests were run. The positive result remains one model and one belief. The notes below are earlier (20–21 Nov).",
   "Planted sentences that raised refusals in stage 1 also push early-reasoning activations toward 'harmful' (rank correlation 0.61 across 16 sentences; 0.41 at the last prompt token: mixed).",
   "Causal tests on gpt-oss-20b. The planted texts reproduce stage 1 on the steering route (refusals of harmless agent tasks over the matched neutral text): rule reminder +16 points [+6, +26], red-team statement +27 [+18, +36], long safety-evaluation thought +43 [+31, +56], long honeypot thought +59 [+47, +71], 'evaluators read your reasoning' −2 [−10, +5].",
   "'Simulated' causal test passes: the 'nothing is real' thought cuts refusals of borderline harmless chat requests by 32 points under a random removal of the same size and by 6 points with the simulated directions removed (difference +26 [+8, +46]).",
