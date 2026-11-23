@@ -60,7 +60,7 @@
   }
  ],
  "full_scale": {
-  "updated": "22 Nov 2026, 14:05–16:20 PST (each partial count is dated)",
+  "updated": "22 Nov 2026, 14:05–16:59 PST (each partial count is dated)",
   "states_note": "Edit 'rows': each row's 'state' applies to every part unless the part has a 'default' or the row has a 'cells' entry for it. A cell is 'state' or 'state: why'; states: done, running, partial (some done, the rest stopped), cut (cut for cost before a usable result), queued, not run, n/a (does not apply to the model). Rows may also name models whose stage 1 is still running (a 'running' entry of 'status').",
   "parts": [
    {
@@ -128,7 +128,7 @@
     "on": "own",
     "state": "done",
     "cells": {
-     "appworld": "running: nothing planted, statements, notices, cues and histories done; corrected planted thoughts 1,071 of 1,292 runs (14:04 PST); extra-long texts next"
+     "appworld": "done: all retained parts finished 22 Nov, 16:59 PST. Corrected one-sentence and long thoughts: 1,292 of 1,292 scored, 160 solved; extra-long: 612 of 612 scored, 82 solved. No remaining infrastructure faults or planting failures. After-run answers missing on 5 and 2 runs respectively because of deterministic server request-validation errors; task scores retained."
     }
    },
    {
