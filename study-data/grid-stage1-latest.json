@@ -42,7 +42,7 @@
    "models": [
     "Gemma 4 31B"
    ],
-   "note": "stage 1 finished; its corrected planted thoughts are running on our own GPUs; counted here only, its results are never shown"
+   "note": "stage 1 finished; its rerun with corrected planted thoughts and control texts finished on 23 Nov (22:47 PST) with every check passed; counted here only, its results stay unread until the saved predictions are scored"
   },
   {
    "state": "running",
@@ -457,7 +457,7 @@
    ],
    "note": "Exploratory validation on eleven models, using a frozen update-9 snapshot rather than the latest grid tables. Round five checks held-out models and beliefs, matched prediction coverage, and log-odds boundary sensitivity. The modest magnitude gain survives the boundary check; directional benefit from calibration is not established. Original blind Gemma 4 31B predictions and earlier outputs remain preserved; held-out planted results remain unread."
   },
-  "running": "Still running: Qwen3.8-27B and Gemma 4 26B agent benchmarks, plus the held-out Gemma 4 31B rerun (counts only). Flint and gpt-oss-120b retained work is complete and the last study GPU rentals have been deleted. Qwen3.8-27B's environment cues and released-wording AgentHarm part are complete. See 'Full-scale run' for dated counts, failures, queues and deliberate cuts. Newly completed benchmark runs are not yet incorporated into the interim effect analysis."
+  "running": "Still running: Qwen3.8-27B and Gemma 4 26B agent benchmarks. The held-out Gemma 4 31B rerun is complete (counts only; results unread). Flint and gpt-oss-120b retained work is complete and the last study GPU rentals have been deleted. Qwen3.8-27B's environment cues and released-wording AgentHarm part are complete. See 'Full-scale run' for dated counts, failures, queues and deliberate cuts. Newly completed benchmark runs are not yet incorporated into the interim effect analysis."
  },
  "audit_changes": [
   {
