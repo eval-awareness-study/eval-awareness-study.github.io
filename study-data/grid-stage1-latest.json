@@ -60,7 +60,7 @@
   }
  ],
  "full_scale": {
-  "updated": "22–23 Nov 2026; latest update 23 Nov, 09:46 PST (each partial count is dated)",
+  "updated": "22–23 Nov 2026; latest progress update 23 Nov, 16:39 PST (each partial count is dated; effect tables remain update 10)",
   "states_note": "Edit 'rows': each row's 'state' applies to every part unless the part has a 'default' or the row has a 'cells' entry for it. A cell is 'state' or 'state: why'; states: done, running, partial (some done, the rest stopped), cut (cut for cost before a usable result), queued, not run, n/a (does not apply to the model). Rows may also name models whose stage 1 is still running (a 'running' entry of 'status').",
   "parts": [
    {
@@ -181,10 +181,10 @@
      "long_texts": "done: chat 1,800 of 1,800 runs and blackmail 68 of 68, on our own GPUs",
      "cue_chat": "done: 900 runs, 889 answered and 11 truncated, no infrastructure errors; finished 19:40 PST",
      "agentharm": "done: released-wording part 1,080 of 1,080 runs, no errors or truncation; 540 of 540 after-run answers",
-     "bfcl": "running: nothing planted and other methods on our own GPUs, 1,342 of 1,972 rows (21:33 PST). Routing imbalance fixed; new episodes verified on the second server, interrupted attempts preserved. Corrected one-sentence/long and extra-long parts queued on this pool; retained rented-pool results remain separate",
-     "appworld": "running: harder test_challenge split, 59 of 1,972 runs (21:33 PST), then corrected one-sentence/long and extra-long parts",
+     "bfcl": "running: base part finished with all 1,972 planned runs scored and no unresolved infrastructure failures on their latest attempts (23 Nov, 15:41 PST). Corrected one-sentence/long part has 199 of 646 rows (16:39 PST); extra-long follows. Earlier interrupted attempts and 20 recovered inference-error rows remain in the accounting. Retained rented-pool results remain separate",
+     "appworld": "running: harder test_challenge split, base part 612 of 1,972 rows (23 Nov, 16:39 PST), then corrected one-sentence/long and extra-long parts",
      "impossiblebench": "partial: first wave done (748 runs, every method, one rented machine, finished 13:00 PST); second wave cut for cost",
-     "tau": "running: extra-long texts on our own GPUs, 37 of 544 runs (21:33 PST); one-sentence and long done on the rented pool (1,127 of 1,152 scored)"
+     "tau": "done: extra-long part on our own GPUs finished with all 544 planned run IDs represented and no infrastructure failures on latest attempts (23 Nov, 16:07 PST). There are 582 attempt rows. Late-call metadata from an earlier interrupted attempt was repaired against archived originals; task outcomes and costs were unchanged. One-sentence and long done on the rented pool (1,127 of 1,152 scored)"
     }
    },
    {
@@ -216,10 +216,10 @@
     "state": "done",
     "cells": {
      "long_texts": "done: on chat (this model has no blackmail part)",
-     "bfcl": "running: nothing planted and other methods 663 of 1,972 result rows (23 Nov, 09:46 PST). Long-context block finished with 115 scored runs and their 115 after-run checks, plus one infrastructure failure. Corrected-text parts queued next; token limits unchanged",
+     "bfcl": "running: base part 1,337 of 1,972 result rows (23 Nov, 16:38 PST). At 16:11 PST, 1,304 were scored and 21 were infrastructure failures: 20 timeouts and one context-length error. Long-context tasks remain slow. Client-disconnect cancellation fix verified and published; handover armed for the base-part boundary, not yet active in this run. No extra recovery pass authorized",
      "impossiblebench": "partial: cue and history feasibility checks complete; agent-task check stopped after a second infrastructure timeout at 96 of 102 trajectories. All 51 readout questions are answered, but that does not make the proof complete. One same-configuration resume for the six missing trajectories is queued after BFCL base finishes. Later ImpossibleBench parts remain held pending a complete, passing proof (23 Nov, 09:46 PST)",
      "tau": "queued: after BFCL",
-     "appworld": "running: base part 1,399 of 1,972 result rows (23 Nov, 09:46 PST), on a separate free GPU pool with the same model revision and settings, fresh references and a passed readout check. Standard screen solved 33 of 34 (above the preset band); harder test_challenge screen solved 25 of 34. Feasibility check passed: 48 of 48 scored, all 40 planted checks and all 48 after-run checks passed. Corrected one-sentence/long and extra-long parts follow; not duplicated in the original queue"
+     "appworld": "running: base part finished with all 1,972 planned runs scored, 1,344 solved, no infrastructure failures and all 1,972 after-run checks (23 Nov, 15:29 PST). Corrected one-sentence/long part started; 89 of 1,292 scored, no infrastructure failures (16:11 PST). This harder test_challenge split runs on a separate free GPU pool with fresh references and a passed readout check. Forty compatible feasibility runs were reused in the base part; eight proof-only runs in the shared directory are excluded from its counts. Extra-long follows"
     }
    },
    {
