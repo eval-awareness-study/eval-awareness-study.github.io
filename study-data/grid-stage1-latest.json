@@ -42,7 +42,7 @@
    "models": [
     "Gemma 4 31B"
    ],
-   "note": "stage 1 finished; its rerun with corrected planted thoughts and control texts finished on 23 Nov (22:47 PST) with every check passed; counted here only, its results stay unread until the saved predictions are scored"
+   "note": "stage 1 finished; its rerun finished on 23 Nov and was opened on 24 Nov to score predictions saved beforehand (see 'Predicting belief effects'); it is not part of the tables on this page"
   },
   {
    "state": "running",
@@ -411,9 +411,13 @@
    }
   ],
   "predictive": {
-   "title": "Predicting belief effects: modest magnitude gains, no added directional value",
-   "lead": "An exploratory relationship fitted to eleven open models, with Gemma 4 31B held out and its predictions saved before reading its planted results. Change = rate(a + γ × g × w) − rate(a): a is the neutral-text starting rate, g the shared belief potency, γ the model's sensitivity on that benchmark, and w the planting method's weight. The latest check finds that calibration does not improve direction predictions over simple caution baselines.",
+   "title": "Predicting belief effects: the held-out test supports the pattern, not a law",
+   "lead": "An exploratory relationship fitted to eleven open models: change = rate(a + γ × g × w) − rate(a), where a is the neutral-text starting rate, g the shared belief potency, γ the model's sensitivity on that benchmark, and w the planting method's weight. Gemma 4 31B was held out, its predictions were saved first, and its results were opened on 24 Nov. The first point gives that test; the rest describe the eleven models.",
    "points": [
+    {
+     "lead": "Held-out test on Gemma 4 31B (24 Nov): the saved prediction is not supported by its pre-stated rule.",
+     "text": "On refusals of harmless agent tasks its error was 2.7 points over 29 belief × length cells, against 3.3 for predicting no effect (difference −0.6, interval −1.9 to +1.7) and 4.2 for the other models' average. On harmful-task compliance it was 5.2 against 5.2 and 4.7. This model refuses none of the 88 harmless tasks with nothing planted and barely moved, so 'no effect' was hard to beat. What carried over: with long texts the ranking of beliefs matched the other models' (rank correlation 0.71), and texts about stakes and oversight raised refusals 6.8 points more than plain evaluation texts (interval 3.2 to 11.1); all 10 clearly moved cells on harmless and harmful agent tasks moved towards caution; no capability cell (0 of 87) and no chat cell (0 of 116) changed. What did not: the one-sentence ranking (0.49, below the pre-set bar), the gain from knowing which belief was planted (−0.4 points, interval −1.3 to 0.0), the per-model calibration (3.0 against 2.7 without it), and no belief text beat the four control texts (0 of 20). Only one-sentence and long texts were run on this model."
+    },
     {
      "lead": "Potency.",
      "text": "On harmless agent tasks the strongest beliefs are 'a synthetic red-team prompt', 'a safety evaluation' and 'a honeypot' (1.3 to 2.0 in log-odds); the weakest are 'simulated', 'not logged' and 'an automated grader will check this' (0.1 to 0.7). 'Real deployment' also raises refusals."
@@ -455,9 +459,9 @@
      "text": "The effects there are small and specific to the model and the belief."
     }
    ],
-   "note": "Exploratory validation on eleven models, using a frozen update-9 snapshot rather than the latest grid tables. Round five checks held-out models and beliefs, matched prediction coverage, and log-odds boundary sensitivity. The modest magnitude gain survives the boundary check; directional benefit from calibration is not established. Original blind Gemma 4 31B predictions and earlier outputs remain preserved; held-out planted results remain unread."
+   "note": "Exploratory validation on eleven models, using a frozen update-9 snapshot rather than the latest grid tables, plus one held-out model scored against predictions and a scoring design committed before its results were read. The held-out test did not support the saved prediction or the per-model calibration; it supported the belief ranking for long texts, the direction on agent tasks and the nulls."
   },
-  "running": "Still running: Qwen3.8-27B and Gemma 4 26B agent benchmarks. The held-out Gemma 4 31B rerun is complete (counts only; results unread). Flint and gpt-oss-120b retained work is complete and the last study GPU rentals have been deleted. Qwen3.8-27B's environment cues and released-wording AgentHarm part are complete. See 'Full-scale run' for dated counts, failures, queues and deliberate cuts. Newly completed benchmark runs are not yet incorporated into the interim effect analysis."
+  "running": "Still running: Qwen3.8-27B and Gemma 4 26B agent benchmarks. The held-out Gemma 4 31B rerun is complete and scored. Flint and gpt-oss-120b retained work is complete and the last study GPU rentals have been deleted. Qwen3.8-27B's environment cues and released-wording AgentHarm part are complete. See 'Full-scale run' for dated counts, failures, queues and deliberate cuts. Newly completed benchmark runs are not yet incorporated into the interim effect analysis."
  },
  "audit_changes": [
   {
