@@ -60,7 +60,7 @@
   }
  ],
  "full_scale": {
-  "updated": "22–24 Nov 2026; latest progress update 24 Nov, 17:38 PST for Gemma 4 26B and 13:45 PST for Qwen3.8-27B (each partial count is dated; effect tables remain update 10)",
+  "updated": "22–24 Nov 2026; latest progress update 24 Nov, 17:38 PST for Gemma 4 26B and 19:55 PST for Qwen3.8-27B (each partial count is dated; effect tables remain update 10)",
   "states_note": "Edit 'rows': each row's 'state' applies to every part unless the part has a 'default' or the row has a 'cells' entry for it. A cell is 'state' or 'state: why'; states: done, running, partial (some done, the rest stopped), cut (cut for cost before a usable result), queued, not run, n/a (does not apply to the model). Rows may also name models whose stage 1 is still running (a 'running' entry of 'status').",
   "parts": [
    {
@@ -181,8 +181,8 @@
      "long_texts": "done: chat 1,800 of 1,800 runs and blackmail 68 of 68, on our own GPUs",
      "cue_chat": "done: 900 runs, 889 answered and 11 truncated, no infrastructure errors; finished 19:40 PST",
      "agentharm": "done: released-wording part 1,080 of 1,080 runs, no errors or truncation; 540 of 540 after-run answers",
-     "bfcl": "running: base part finished with all 1,972 planned runs scored and no unresolved infrastructure failures on their latest attempts (23 Nov, 15:41 PST). Corrected one-sentence/long part: 881 attempts recorded against 1,326 planned runs (24 Nov, 07:44 PST; some runs have a second attempt). An earlier status line gave this part's size as 646; that is the extra-long part, which follows. On 23 Nov, 22:34 PST the run was switched to the revision that cancels abandoned requests, because about a third of the server's load was requests whose client had given up; 16 runs in progress at the switch were restarted and are counted apart. Earlier interrupted attempts and 20 recovered inference-error rows remain in the accounting. Retained rented-pool results remain separate",
-     "appworld": "running: harder test_challenge split, base part 1,562 of 1,972 planned runs (24 Nov, 13:45 PST); then corrected one-sentence/long and extra-long parts",
+     "bfcl": "running: base part finished with all 1,972 planned runs scored and no unresolved infrastructure failures on their latest attempts (23 Nov, 15:41 PST). Corrected one-sentence/long part finished (24 Nov, 19:55 PST): all 1,326 planned runs recorded, 1,322 scored (1,315 answered, 7 cut at the length limit); 4 runs on one long-context task ended in client timeouts on both of their attempts and are kept as infrastructure failures; planting correct on all 1,292 planted runs. An earlier status line gave this part's size as 646; that is the extra-long part, which has now started. On 23 Nov, 22:34 PST the run was switched to the revision that cancels abandoned requests, because about a third of the server's load was requests whose client had given up; 16 runs in progress at the switch were restarted and are counted apart. Earlier interrupted attempts and 20 recovered inference-error rows remain in the accounting. Retained rented-pool results remain separate",
+     "appworld": "running: harder test_challenge split, base part 1,846 attempts against 1,972 planned runs (24 Nov, 19:55 PST); then corrected one-sentence/long and extra-long parts",
      "impossiblebench": "partial: first wave done (748 runs, every method, one rented machine, finished 13:00 PST); second wave cut for cost",
      "tau": "done: extra-long part on our own GPUs finished with all 544 planned run IDs represented and no infrastructure failures on latest attempts (23 Nov, 16:07 PST). There are 582 attempt rows. Late-call metadata from an earlier interrupted attempt was repaired against archived originals; task outcomes and costs were unchanged. One-sentence and long done on the rented pool (1,127 of 1,152 scored)"
     }
