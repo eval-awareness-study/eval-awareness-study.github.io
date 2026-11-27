@@ -18,7 +18,10 @@
 .gf-legend li { display: flex; align-items: flex-start; gap: 7px; }
 .gf-legend b { color: var(--ink); white-space: nowrap; }
 .gf-key { flex: none; display: inline-block; width: 22px; height: 15px; border-radius: 2px; margin-top: 1px; }
-.gf-key.st-res { background: rgba(174,90,34,.45); box-shadow: inset 0 0 0 2px var(--ink); }
+.gf-key.st-res { background: rgba(174,90,34,.45); box-shadow: none; }
+.gf-key.st-res.counts { box-shadow: inset 0 0 0 2px var(--ink); }
+.gf-key-note { position: relative; background: #f4f5f1; border: 1px solid #d6dad3; }
+.gf-key-note::after { content: ""; position: absolute; top: -1px; right: -1px; border: 5px solid transparent; border-top-color: #b5452b; border-right-color: #b5452b; border-radius: 0 2px 0 0; }
 .gf-filters { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 10px 0 8px; font: 13px ui-sans-serif, system-ui, sans-serif; }
 .gf-filters label { display: flex; flex-direction: column; gap: 3px; color: var(--muted); font-weight: 600; font-size: 12px; }
 .gf-filters select { min-height: 38px; min-width: 200px; max-width: calc(100vw - 40px); margin: 0; font: 14px ui-sans-serif, system-ui, sans-serif;
@@ -43,9 +46,10 @@
 .gf-c:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
 .gf-c .v { font-weight: 700; font-variant-numeric: tabular-nums; }
 .gf-c .i { font-size: 10px; color: #3d4a4c; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.st-res.counts, .gf-key.st-res { box-shadow: inset 0 0 0 2px var(--ink); }
+.st-res.counts { box-shadow: inset 0 0 0 2px var(--ink); }
 .st-null { background: #eef0ea; color: var(--muted); }
 .st-floor { background: repeating-linear-gradient(0deg, #f3f0e4 0 4px, #e6dfc8 4px 5px); color: #6b5d2e; font-style: italic; }
+.st-floor .v, .st-null .v { font-weight: 500; }
 .st-excl { background: #fbe9e4; box-shadow: inset 0 0 0 1.5px #a8553a; color: #8a2a17; }
 .st-desc { background: #fff; box-shadow: inset 0 0 0 1.5px #8a9690; color: #4b5657; background-image: radial-gradient(#c9cec7 1px, transparent 1px); background-size: 5px 5px; }
 .st-run { background: #fbf3e8; box-shadow: inset 4px 0 0 #e3a857; color: #8a4a17; }

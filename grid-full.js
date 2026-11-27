@@ -76,11 +76,14 @@
       const what = [d.text && d.text !== 'pooled' ? `‘${d.text}’` : 'pooled', d.against ? `against ${d.against}` : '', d.reading && d.reading !== 'all runs' ? d.reading : ''].filter(Boolean).join(', ');
       const iv = d.ci_low !== undefined ? ` [${sgn(d.ci_low)}, ${sgn(d.ci_high)}]` : '';
       const mde = Number(d.mde_pts) > 0 ? `could detect ${Number(d.mde_pts).toFixed(0)}+` : 'could not move';
-      const val = d.state === 'result' ? `${sgn(d.effect_pts)}${iv}${d.cnt ? ', counts' : ''}` : d.state === 'no_change' ? `${d.effect_pts !== undefined ? sgn(d.effect_pts) + iv + '; ' : ''}no detectable change (${mde})` : ST[d.state][0];
+      const est = d.effect_pts !== undefined ? sgn(d.effect_pts) + iv + '; ' : '';
+      const val = d.state === 'result' ? `${sgn(d.effect_pts ?? d.largest_move_pts)}${iv}${d.cnt ? ', counts' : ''}` : d.state === 'no_change' ? `${est}no detectable change (${mde})` : d.state === 'floor_ceiling' ? `${est}${ST[d.state][0]}` : ST[d.state][0];
       return `<li>${esc(what)}: ${esc(val)}</li>`;
     };
     const base = c.base_rate ? `<p>Rate with the comparison texts ${Number(c.base_rate).toFixed(1)}%${c.rate_pct ? `, with the belief texts ${Number(c.rate_pct).toFixed(1)}%` : ''}${c.runs ? `; ${Number(c.runs).toLocaleString('en-US')} runs` : ''}.</p>` : '';
-    const texts = c.texts ? `<p>Texts: ${esc(c.texts)}${c.texts_up !== undefined ? `; interval above zero ${esc(c.texts_up)}, below ${esc(c.texts_down || '0')}` : ''}${c.texts_counting !== undefined ? `; counting as an effect ${esc(c.texts_counting)}` : ''}${c.largest_move_pts ? `; largest move ${esc(sgn(c.largest_move_pts))}` : ''}.</p>` : '';
+    const n = (v) => Math.round(Number(v || 0));
+    const textsWord = (k) => `${k} text${k === 1 ? '' : 's'}`;
+    const texts = c.texts ? `<p>Of its ${textsWord(n(c.texts))}, ${n(c.texts_up)} raised the rate and ${n(c.texts_down)} lowered it, each with its own 95% interval clear of zero${c.texts_counting !== undefined ? `; ${n(c.texts_counting)} count${n(c.texts_counting) === 1 ? 's' : ''} as an effect after correction for the number of comparisons` : ''}.${c.largest_move_pts ? ` The largest single-text move is ${esc(sgn(c.largest_move_pts))} points.` : ''}</p>` : '';
     pop.innerHTML = `<button type="button" class="x" aria-label="Close">×</button><h5>${esc(ST[c.state][0][0].toUpperCase() + ST[c.state][0].slice(1))}</h5><p>${esc(c.why)}</p>${base}${texts}${c.source_table ? `<p class="fine">Table: ${esc(c.source_table)}</p>` : ''}${more.length ? `<p><b>Per text and other readings</b></p><ul>${more.map(line).join('')}</ul>` : ''}`;
     pop.hidden = false;
     const r = btn.getBoundingClientRect();
