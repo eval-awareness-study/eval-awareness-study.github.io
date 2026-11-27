@@ -42,59 +42,74 @@
   route();
 
   // ---- data --------------------------------------------------------------------------------------------------------
-  const byId = new Map(D.cells.map((c) => [c.cell_id, c]));
-  const head = D.cells.filter((c) => c.headline);
-  const cellKey = (c) => [c.model, c.bench, c.method, c.length || ''].join('|');
-  const headBy = new Map(head.map((c) => [cellKey(c), c]));
-  const detail = new Map();
-  for (const c of D.cells) {
-    if (c.headline) continue;
-    const k = cellKey(c);
-    if (!detail.has(k)) detail.set(k, []);
-    detail.get(k).push(c);
-  }
+  // The headline cells are the server-rendered matrix; each cell's detail (numbers, per-text rows) is in one file per
+  // model (D.files), fetched the first time a cell of that model is opened.
   const ST = D.states;
-  const sgn = (v) => { const n = Number(v); const s = (n >= 0 ? '+' : '') + n.toFixed(1); return Number(s) === 0 ? '0.0' : s.replace('-', '\u2212'); };
-  function cellHtml(c) {
-    const cls = ST[c.state][2] + (c.cnt ? ' counts' : '') + (c.flag ? ' flagged' : '');
-    let style = '';
-    if (c.state === 'result') {
-      const e = Math.max(-1, Math.min(1, Number(c.effect_pts ?? c.largest_move_pts) / 15));
-      style = ` style="background:rgba(${e > 0 ? '174,90,34' : '39,103,155'},${(0.12 + 0.55 * Math.abs(e)).toFixed(2)})"`;
+  const tdBy = new Map();
+  for (const box of $$('.gf-bench')) {
+    for (const tr of $$('tbody tr', box)) {
+      for (const td of $$('td.gf-cell', tr)) tdBy.set([tr.dataset.model, box.dataset.bench, td.dataset.method, td.dataset.length || ''].join('|'), td);
     }
-    const [main, sub] = c.short;
-    return `<span class="gf-cell ${cls}"${style}><button type="button" class="gf-c" data-id="${esc(c.cell_id)}" title="${esc(c.why)}"><span class="v">${esc(main)}</span>${sub ? `<span class="i">${esc(sub)}</span>` : ''}</button></span>`;
+  }
+  const sgn = (v) => { const n = Number(v); const s = (n >= 0 ? '+' : '') + n.toFixed(1); return Number(s) === 0 ? '0.0' : s.replace('-', '\u2212'); };
+  function cellHtml(td) {
+    const style = td.getAttribute('style');
+    return `<span class="${esc(td.className.replace(/\bgf-hide\b/g, '').trim())}" data-st="${esc(td.dataset.st)}"${style ? ` style="${esc(style)}"` : ''}>${td.innerHTML}</span>`;
+  }
+  const loaded = new Map();
+  function loadModel(m) {
+    if (!loaded.has(m)) {
+      loaded.set(m, fetch(D.files[m]).then((r) => { if (!r.ok) throw new Error(String(r.status)); return r.json(); }));
+      loaded.get(m).catch(() => loaded.delete(m));
+    }
+    return loaded.get(m);
   }
 
   // ---- popover -----------------------------------------------------------------------------------------------------
   const pop = $('#gf-pop');
-  function openPop(btn) {
-    const c = byId.get(btn.dataset.id);
-    if (!c) return;
-    const more = (detail.get(cellKey(c)) || []).slice().sort((a, b) => (a.text || '').localeCompare(b.text || ''));
-    const line = (d) => {
-      const what = [d.text && d.text !== 'pooled' ? `‘${d.text}’` : 'pooled', d.against ? `against ${d.against}` : '', d.reading && d.reading !== 'all runs' ? d.reading : ''].filter(Boolean).join(', ');
-      const iv = d.ci_low !== undefined ? ` [${sgn(d.ci_low)}, ${sgn(d.ci_high)}]` : '';
-      const mde = Number(d.mde_pts) > 0 ? `could detect ${Number(d.mde_pts).toFixed(0)}+` : 'could not move';
-      const est = d.effect_pts !== undefined ? sgn(d.effect_pts) + iv + '; ' : '';
-      const val = d.state === 'result' ? `${sgn(d.effect_pts ?? d.largest_move_pts)}${iv}${d.cnt ? ', counts' : ''}` : d.state === 'no_change' ? `${est}no detectable change (${mde})` : d.state === 'floor_ceiling' ? `${est}${ST[d.state][0]}` : ST[d.state][0];
-      return `<li>${esc(what)}: ${esc(val)}</li>`;
-    };
-    const base = c.base_rate ? `<p>Rate with the comparison texts ${Number(c.base_rate).toFixed(1)}%${c.rate_pct ? `, with the belief texts ${Number(c.rate_pct).toFixed(1)}%` : ''}${c.runs ? `; ${Number(c.runs).toLocaleString('en-US')} runs` : ''}.</p>` : '';
-    const n = (v) => Math.round(Number(v || 0));
-    const textsWord = (k) => `${k} text${k === 1 ? '' : 's'}`;
-    const texts = c.texts ? `<p>Of its ${textsWord(n(c.texts))}, ${n(c.texts_up)} raised the rate and ${n(c.texts_down)} lowered it, each with its own 95% interval clear of zero${c.texts_counting !== undefined ? `; ${n(c.texts_counting)} count${n(c.texts_counting) === 1 ? 's' : ''} as an effect after correction for the number of comparisons` : ''}.${c.largest_move_pts ? ` The largest single-text move is ${esc(sgn(c.largest_move_pts))} points.` : ''}</p>` : '';
-    pop.innerHTML = `<button type="button" class="x" aria-label="Close">×</button><h5>${esc(ST[c.state][0][0].toUpperCase() + ST[c.state][0].slice(1))}</h5><p>${esc(c.why)}</p>${base}${texts}${c.source_table ? `<p class="fine">Table: ${esc(c.source_table)}</p>` : ''}${more.length ? `<p><b>Per text and other readings</b></p><ul>${more.map(line).join('')}</ul>` : ''}`;
-    pop.hidden = false;
+  const n = (v) => Math.round(Number(v || 0));
+  const line = (d) => {
+    const what = [d.text && d.text !== 'pooled' ? `‘${d.text}’` : 'pooled', d.against ? `against ${d.against}` : '', d.reading && d.reading !== 'all runs' ? d.reading : ''].filter(Boolean).join(', ');
+    const iv = d.ci_low !== undefined ? ` [${sgn(d.ci_low)}, ${sgn(d.ci_high)}]` : '';
+    const mde = Number(d.mde_pts) > 0 ? `could detect ${Number(d.mde_pts).toFixed(0)}+` : 'could not move';
+    const est = d.effect_pts !== undefined ? sgn(d.effect_pts) + iv + '; ' : '';
+    const val = d.state === 'result' ? `${sgn(d.effect_pts ?? d.largest_move_pts)}${iv}${d.cnt ? ', counts' : ''}` : d.state === 'no_change' ? `${est}no detectable change (${mde})` : d.state === 'floor_ceiling' ? `${est}${ST[d.state][0]}` : ST[d.state][0];
+    return `<li>${esc(what)}: ${esc(val)}</li>`;
+  };
+  function detailHtml(c) {
+    const base = c.base_rate ? `<p>Rate with the comparison texts ${Number(c.base_rate).toFixed(1)}%${c.rate_pct ? `, with the belief texts ${Number(c.rate_pct).toFixed(1)}%` : ''}${c.runs ? `; ${n(c.runs).toLocaleString('en-US')} runs` : ''}.</p>` : '';
+    const k = n(c.texts);
+    const texts = c.texts ? `<p>Of its ${k} text${k === 1 ? '' : 's'}, ${n(c.texts_up)} raised the rate and ${n(c.texts_down)} lowered it, each with its own 95% interval clear of zero${c.texts_counting !== undefined ? `; ${n(c.texts_counting)} count${n(c.texts_counting) === 1 ? 's' : ''} as an effect after correction for the number of comparisons` : ''}.${c.largest_move_pts ? ` The largest single-text move is ${esc(sgn(c.largest_move_pts))} points.` : ''}</p>` : '';
+    const more = (c.more || []).slice().sort((a, b) => (a.text || '').localeCompare(b.text || ''));
+    return `${base}${texts}${c.source_table ? `<p class="fine">Table: ${esc(c.source_table)}</p>` : ''}${more.length ? `<p><b>Per text and other readings</b></p><ul>${more.map(line).join('')}</ul>` : ''}`;
+  }
+  function place(btn) {
     const r = btn.getBoundingClientRect();
     const w = pop.offsetWidth, h = pop.offsetHeight;
-    let x = Math.min(window.innerWidth - w - 12, Math.max(12, r.left + r.width / 2 - w / 2));
+    const x = Math.min(window.innerWidth - w - 12, Math.max(12, r.left + r.width / 2 - w / 2));
     let y = r.bottom + 8;
     if (y + h > window.innerHeight - 12) y = Math.max(12, r.top - h - 8);
     pop.style.left = x + 'px'; pop.style.top = y + 'px';
+  }
+  function openPop(btn) {
+    const i = Number(btn.dataset.i);
+    const st = btn.closest('[data-st]').dataset.st;
+    const m = D.models[D.cm[i]];
+    const label = ST[st][0];
+    pop.innerHTML = `<button type="button" class="x" aria-label="Close">×</button><h5>${esc(label[0].toUpperCase() + label.slice(1))}</h5><p>${esc(btn.title)}</p><div class="gf-pop-more"><p class="fine">Loading the cell's detail…</p></div>`;
+    pop.hidden = false;
+    place(btn);
     $('.x', pop).addEventListener('click', closePop);
     $('.x', pop).focus({ preventScroll: true });
     pop._from = btn;
+    loadModel(m).then((f) => {
+      if (pop.hidden || pop._from !== btn) return;
+      $('.gf-pop-more', pop).innerHTML = detailHtml((f.cells || {})[i] || {});
+      place(btn);
+    }, () => {
+      if (pop.hidden || pop._from !== btn) return;
+      $('.gf-pop-more', pop).innerHTML = '<p class="fine">The cell\'s detail could not be loaded; the line above is its summary.</p>';
+    });
   }
   function closePop() { if (pop.hidden) return; pop.hidden = true; if (pop._from) pop._from.focus({ preventScroll: true }); }
   document.addEventListener('click', (e) => {
@@ -137,8 +152,8 @@
       for (const b of fam.benches) {
         h += `<div class="gf-card"><h4>${esc(D.bench_names[b] || b)}${D.directions[b] ? ` <span class="sub">${esc(D.directions[b])}</span>` : ''}</h4><dl>`;
         for (const c of fam.bench_cols[b]) {
-          const cell = headBy.get([m, b, c[0], c[1]].join('|'));
-          h += `<dt>${esc(colName(c))}</dt><dd>${cell ? cellHtml(cell) : ''}</dd>`;
+          const td = tdBy.get([m, b, c[0], c[1]].join('|'));
+          h += `<dt>${esc(colName(c))}</dt><dd>${td ? cellHtml(td) : ''}</dd>`;
         }
         h += '</dl></div>';
       }
@@ -156,7 +171,7 @@
     h += `<table class="gf-ptable"><thead><tr><th scope="col">Model</th>${fam.benches.map((b) => `<th scope="col">${esc(D.bench_names[b] || b)}${D.directions[b] ? `<span class="sub">${esc(D.directions[b])}</span>` : ''}</th>`).join('')}</tr></thead><tbody>`;
     for (const m of D.models) {
       const note = (D.model_notes || {})[m];
-      h += `<tr><th scope="row">${esc(m)}${note ? `<span class="sub">${esc(note)}</span>` : ''}</th>${fam.benches.map((b) => { const c = headBy.get([m, b, col[0], col[1]].join('|')); return `<td>${c ? cellHtml(c) : '<span class="gf-na" title="not part of the design for this benchmark">–</span>'}</td>`; }).join('')}</tr>`;
+      h += `<tr><th scope="row">${esc(m)}${note ? `<span class="sub">${esc(note)}</span>` : ''}</th>${fam.benches.map((b) => { const td = tdBy.get([m, b, col[0], col[1]].join('|')); return `<td>${td ? cellHtml(td) : '<span class="gf-na" title="not part of the design for this benchmark">–</span>'}</td>`; }).join('')}</tr>`;
     }
     phone.innerHTML = h + '</tbody></table>';
     $('#p-fam', phone).addEventListener('change', (e) => { pFamily = e.target.value; renderByFamily(); });
