@@ -95,7 +95,7 @@
     const i = Number(btn.dataset.i);
     const st = btn.closest('[data-st]').dataset.st;
     const m = D.models[D.cm[i]];
-    const label = ST[st][0];
+    const label = st === 'running' ? $('.v', btn).textContent : ST[st][0];
     pop.innerHTML = `<button type="button" class="x" aria-label="Close">×</button><h5>${esc(label[0].toUpperCase() + label.slice(1))}</h5><p>${esc(btn.title)}</p><div class="gf-pop-more"><p class="fine">Loading the cell's detail…</p></div>`;
     pop.hidden = false;
     place(btn);
